@@ -11,12 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.appointments import routes as appointments_routes
 from app.api.auth import routes as auth_routes
-from app.api.customers import routes as customers_routes
-from app.api.employees import routes as employees_routes
+from app.api.facilities import routes as facilities_routes
 from app.api.files import routes as files_routes
-from app.api.services import routes as services_routes
+from app.api.inventory import routes as inventory_routes
 from app.core.config import settings
 from app.core.error_handlers import (
     custom_exception_handler,
@@ -32,7 +30,7 @@ from app.core.models import *  # noqa: F401, F403
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 
-logger = logging.getLogger("sigap")
+logger = logging.getLogger("tse")
 logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] - %(message)s",
@@ -104,11 +102,9 @@ app.add_exception_handler(
     custom_starlette_http_exception_handler,  # type: ignore
 )
 app.include_router(auth_routes.router)
+app.include_router(inventory_routes.router)
 app.include_router(files_routes.router)
-app.include_router(employees_routes.router)
-app.include_router(appointments_routes.router)
-app.include_router(customers_routes.router)
-app.include_router(services_routes.router)
+app.include_router(facilities_routes.router)
 
 
 if __name__ == "__main__":

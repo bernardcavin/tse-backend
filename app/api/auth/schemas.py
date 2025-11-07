@@ -6,6 +6,7 @@ from app.core.schema_operations import BaseModel
 class UserSchema(BaseModel):
     id: UUID
     name: str
+    username: str
 
 
 # Define a Pydantic model for the JSON payload

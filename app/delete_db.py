@@ -1,4 +1,4 @@
 if __name__ == "__main__":
-    from app.core.database.functions import drop_existing_data
+    from app.core.database.functions import delete_all_data
 
-    drop_existing_data()
+    delete_all_data()

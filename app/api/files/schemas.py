@@ -10,6 +10,8 @@ class FileRecordSchema(BaseModel):
     filename: str
     size: int
     content_type: str
+    etag: str
+    key: str
     upload_date: datetime
     status: FileRecordStatus
     uploaded_by_id: UUID

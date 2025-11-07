@@ -1,7 +1,9 @@
 import json
 from typing import Any, Dict, Type
-from sqlalchemy.orm import Query
-from sqlalchemy import cast, String, Integer, Date
+
+from fastapi import Request
+from sqlalchemy import Date, Integer, String, asc, cast, desc
+from sqlalchemy.orm import Query, Session
 
 
 def apply_filters(
@@ -39,7 +41,6 @@ def apply_filters(
                 else:
                     query = query.filter(column >= min_val, column <= int(max_val_str))
             except (ValueError, IndexError):
-
                 return query
 
         elif isinstance(column.type, Date):
@@ -56,3 +57,67 @@ def apply_filters(
             query = query.filter(cast(column, String).ilike(f"%{value}%"))
 
     return query
+
+
+def get_paginated_data(
+    db: Session, request: Request, model, schema, initial_sorted_column
+):
+    # Extract pagination and sorting parameters from the request
+    page = int(request.query_params.get("page", 1))
+    limit = int(request.query_params.get("limit", 10))
+    sort = request.query_params.get("sort", f"{initial_sorted_column}:desc")
+    sort_column, sort_order = sort.split(":")
+
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+
+    # Base query
+    query = db.query(model)
+
+    # Apply sorting
+    if sort_column and sort_order:
+        if sort_order.lower() == "asc":
+            query = query.order_by(asc(getattr(model, sort_column)))
+        else:
+            query = query.order_by(desc(getattr(model, sort_column)))
+
+    # Get total count of Contractor records
+    total_count = query.count()
+
+    # Apply pagination
+    data = query.offset(offset).limit(limit).all()
+
+    # Validate Contractor data using the schema
+    data = [schema.model_validate(contractor) for contractor in data]
+
+    # Compute pagination metadata
+    last_page = (total_count + limit - 1) // limit
+    url = str(request.url).split("?")[0]
+
+    meta = {
+        "total": total_count,
+        "perPage": limit,
+        "currentPage": page,
+        "lastPage": last_page,
+        "firstPage": 1,
+        "firstPageUrl": f"{url}?page=1&limit={limit}",
+        "lastPageUrl": f"{url}?page={last_page}&limit={limit}",
+        "nextPageUrl": f"{url}?page={min(page + 1, last_page)}&limit={limit}",
+        "previousPageUrl": f"{url}?page={max(page - 1, 1)}&limit={limit}",
+    }
+
+    return {"meta": meta, "data": data}
+
+
+def get_options(
+    db: Session,
+    model,
+    label_column: str,
+    value_column: str = "id",
+):
+    options = db.query(
+        getattr(model, label_column).label("label"),
+        getattr(model, value_column).label("value"),
+    ).all()
+
+    return [{"label": option.label, "value": option.value} for option in options]

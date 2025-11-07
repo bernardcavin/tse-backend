@@ -2,9 +2,6 @@ import contextlib
 import uuid
 from typing import Any, Iterator
 
-from app.core.config import settings
-from app.utils.model_bases.audit_base import CreateMixin, SoftDeleteMixin, UpdateMixin
-from app.utils.models_utils import to_jsonable_dict
 from sqlalchemy import (
     JSON,
     UUID,
@@ -20,6 +17,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
+
+from app.core.config import settings
+from app.utils.model_bases.audit_base import CreateMixin, SoftDeleteMixin, UpdateMixin
+from app.utils.models_utils import to_jsonable_dict
 
 
 class DatabaseSessionManager:
@@ -69,9 +70,9 @@ sessionmanager = DatabaseSessionManager(
 
 DeclarativeBase = declarative_base()
 
+
 class Base(DeclarativeBase, CreateMixin, UpdateMixin, SoftDeleteMixin):
     __abstract__ = True
-
 
 
 class DataChange(Base):
@@ -86,10 +87,14 @@ class DataChange(Base):
     success = Column(Boolean, default=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
+
 def track_changes(session, flush_context):
     # INSERT
     for obj in session.new:
-        if isinstance(obj, Base) and obj.__tablename__ not in ["data_changes", "user_actions"]:
+        if isinstance(obj, Base) and obj.__tablename__ not in [
+            "data_changes",
+            "user_actions",
+        ]:
             change = DataChange(
                 table_name=obj.__tablename__,
                 action="INSERT",
@@ -112,7 +117,10 @@ def track_changes(session, flush_context):
 
     # DELETE
     for obj in session.deleted:
-        if isinstance(obj, Base) and obj.__tablename__ not in ["data_changes", "user_actions"]:
+        if isinstance(obj, Base) and obj.__tablename__ not in [
+            "data_changes",
+            "user_actions",
+        ]:
             change = DataChange(
                 table_name=obj.__tablename__,
                 action="DELETE",
@@ -120,5 +128,6 @@ def track_changes(session, flush_context):
                 changed_data=to_jsonable_dict(obj),
             )
             session.add(change)
+
 
 event.listen(Session, "after_flush", track_changes)

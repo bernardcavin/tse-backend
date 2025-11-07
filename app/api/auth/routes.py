@@ -11,7 +11,6 @@ from app.api.auth.utils import get_current_user
 from app.core.dependencies import get_db_session, get_db_session_base
 from app.core.schema_operations import create_api_response
 from app.core.security import (
-    authorize,
     create_access_token,
     get_current_token,
 )
@@ -56,7 +55,6 @@ async def login_for_access_token(
 
 
 @router.get("/me", summary="Get details of currently logged in user", tags=["User"])
-@authorize(role=["manager", "operator", "superuser"])
 async def get_me(
     user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db_session),
@@ -70,7 +68,6 @@ async def get_me(
 
 
 @router.post("/logout", summary="Logout User", tags=["User"])
-@authorize(role=["manager", "operator", "superuser"])
 async def logout(
     token: str = Depends(get_current_token),
     user: schemas.UserSchema = Depends(get_current_user),

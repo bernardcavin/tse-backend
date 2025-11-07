@@ -2,6 +2,7 @@ import secrets
 from typing import Annotated, Any, Literal
 
 from pydantic import AnyUrl, BeforeValidator, computed_field
+from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -32,22 +33,40 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    S3_ENDPOINT_URL: str = "tse-minio:9000"
+    S3_ACCESS_KEY: str = "12345678"
+    S3_SECRET_ACCESS_KEY: str = "password"
+    S3_BUCKET_NAME: str = "tse"
+
+    IMAGE_PROXY_URL: str = "http://172.17.0.1:8080"
+    IMGPROXY_KEY: str = "736563726574"
+    IMGPROXY_SALT: str = "68656C6C6F"
+
     APP_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 
-    APP_NAME: str = "SIGAP"
-    OTLP_GRPC_ENDPOINT: str = "sigap-tempo:4317"
+    APP_NAME: str = "TSE"
 
-    PROJECT_NAME: str = "SIGAP"
+    PROJECT_NAME: str = "TSE"
 
-    DB_SCHEME: Literal["sqlite"] = "sqlite"
-    DB_PATH: str = "./sigap.db"  # or absolute path if you want
+    DB_SCHEME: Literal["postgresql"] = "postgresql"
+    DB_DRIVER: str = "asyncpg"
+    DB_SERVER: str = "localhost"
+    DB_PORT: int = 5432
+    DB_USER: str = ""
+    DB_PASSWORD: str = ""
+    DB_DB: str = ""
 
     @computed_field
     @property
-    def DATABASE_URI(self) -> str:
-        # SQLite don’t use username, password, host, port
-        # For async SQLAlchemy, use `sqlite+aiosqlite:///`
-        return f"{self.DB_SCHEME}:///{self.DB_PATH}"
+    def DATABASE_URI(self) -> MultiHostUrl:
+        return MultiHostUrl.build(
+            scheme=self.DB_SCHEME,
+            username=self.DB_USER,
+            password=self.DB_PASSWORD,
+            host=self.DB_SERVER,
+            port=self.DB_PORT,
+            path=self.DB_DB,
+        )
 
 
 settings = Settings()

@@ -22,5 +22,13 @@
   "python.testing.pytestArgs": ["tests"],
   "terminal.integrated.env.linux": {
     "PYTHONPATH": "${workspaceFolder}"
-  }
+  },
+    "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.py$",
+        "cmd": "sudo make restart"
+      }
+    ]
+  },
 }

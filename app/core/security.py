@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
-from functools import wraps
 
-from app.core.config import settings
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+
+from app.core.config import settings
 
 load_dotenv()
 
@@ -20,35 +20,12 @@ def get_current_token(token: str = Depends(oauth2_scheme)) -> str:
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now() + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
-
-
-def authorize(role: list):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            user = kwargs.get("user")
-            if user is not None:
-                user_role = user.role.value.lower()
-                if user_role not in [role.lower() for role in role]:
-                    raise HTTPException(
-                        status_code=403,
-                        detail="User is not authorized to access this resource",
-                    )
-            else:
-                raise HTTPException(status_code=401, detail="Unauthorized")
-            return await func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
 
 
 def refresh_token(current_token: str = Depends(oauth2_scheme)):

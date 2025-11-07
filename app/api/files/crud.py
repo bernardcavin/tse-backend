@@ -1,95 +1,90 @@
 import datetime
-import os
 import uuid
 from uuid import UUID
 
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.files.models import FileRecord, FileRecordStatus
 from app.api.files.schemas import FileRecordSchema
 from app.core.config import settings
-
-UPLOAD_DIR = settings.LOCAL_UPLOAD_DIR  # e.g., "./uploads"
-
-
-def ensure_upload_dir():
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+from app.core.imgproxy import ImgProxy
+from app.core.object_storage import generate_presigned_url
 
 
-def save_uploaded_file(file: UploadFile, db: Session, user):
-    ensure_upload_dir()
-    file_id = str(uuid.uuid4())
-    file_ext = os.path.splitext(file.filename)[1]  # type: ignore
-    local_filename = f"{file_id}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, local_filename)
+def get_presigned_upload_url(filename: str, size: int, db: Session, user):
+    id = str(uuid.uuid4())
 
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
-
-    file_size = os.path.getsize(file_path)
+    presigned_url = generate_presigned_url(id)
 
     uploaded_file = FileRecord(
-        id=file_id,
-        filename=file.filename,
-        size=file_size,
-        content_type=file.content_type or "unknown",
+        id=id,
+        filename=filename,
+        size=size,
+        content_type="unknown",
+        etag="",
+        key=id,
         upload_date=datetime.datetime.now(datetime.timezone.utc),
-        status=FileRecordStatus.UPLOADED,
+        status=FileRecordStatus.PENDING,
         uploaded_by_id=user.id,
     )
-
     db.add(uploaded_file)
     db.commit()
-    db.refresh(uploaded_file)
 
-    return uploaded_file
+    return presigned_url, uploaded_file.id
 
 
-def get_file_path(file_id: UUID, db: Session):
+def get_presigned_download_url(file_id: UUID, db: Session, user):
     uploaded_file = db.query(FileRecord).filter(FileRecord.id == file_id).first()
 
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    file_path = os.path.join(UPLOAD_DIR, uploaded_file.key)  # type: ignore
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File missing on disk")
-
-    return file_path
+    return uploaded_file.get_download_url()
 
 
-def get_file_metadata(file_id: UUID, db: Session):
+def update_file_metadata(file_id: UUID, db: Session, user):
     uploaded_file = db.query(FileRecord).filter(FileRecord.id == file_id).first()
-    if not uploaded_file:
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileRecordSchema.model_validate(uploaded_file)
 
-
-def update_file_metadata(file_id: UUID, db: Session):
-    uploaded_file = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File metadata not found")
 
-    file_path = os.path.join(UPLOAD_DIR, uploaded_file.key)  # type: ignore
-    if os.path.exists(file_path):
-        uploaded_file.size = os.path.getsize(file_path)  # type: ignore
-        uploaded_file.status = FileRecordStatus.UPLOADED  # type: ignore
-    else:
-        uploaded_file.status = FileRecordStatus.MISSING  # type: ignore
+    uploaded_file.update_file_metadata()
 
     db.commit()
 
 
-def get_image_url(file_id: UUID, db: Session):
+def get_file_metadata(file_id: UUID, db: Session, user):
     uploaded_file = db.query(FileRecord).filter(FileRecord.id == file_id).first()
     if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    file_path = os.path.join(UPLOAD_DIR, uploaded_file.key)  # type: ignore
-    if not os.path.exists(file_path):
+    return FileRecordSchema.model_validate(uploaded_file)
+
+
+def get_image_url(
+    file_id: UUID, db: Session, width, height, resize_type, enlarge, extension
+):
+    # Generate presigned URL for MinIO (valid for some time)
+    uploaded_file = db.query(FileRecord).filter(FileRecord.id == file_id).first()
+
+    if not uploaded_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Optionally resize or transform here if needed (e.g., using Pillow)
-    # For now, just return local static path
-    return f"/static/uploads/{uploaded_file.key}"
+    presigned_url = uploaded_file.get_download_url()
+
+    if not presigned_url:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    imgproxy_client = ImgProxy.from_s3(
+        bucket=settings.S3_BUCKET_NAME,
+        object_key=str(file_id),
+        proxy_host=settings.IMAGE_PROXY_URL,
+        key=settings.IMGPROXY_KEY,
+        salt=settings.IMGPROXY_SALT,
+        width=width,
+        height=height,
+        enlarge=enlarge,
+    )
+
+    return imgproxy_client.build_url()

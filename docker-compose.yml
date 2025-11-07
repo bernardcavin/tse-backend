@@ -1,0 +1,92 @@
+# version: '3.8'
+
+services:
+  tse-backend:
+
+    image: python:3.12.6-slim
+    container_name: tse-backend
+    build:
+      context: . # Build from the current directory (where Dockerfile is located)
+      dockerfile: Dockerfile # Explicitly specify the Dockerfile if it's named differently
+    volumes:
+      - ./.:/backend # Mount your app directory here
+    working_dir: /backend
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Jakarta
+    command: bash -c "make run"
+    depends_on:
+      - tse-postgres
+      - tse-minio
+    ports:
+      - '8000:8000' # Expose port (adjust to your needs)
+    networks:
+      - tse-network
+
+  tse-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tse-postgres
+    environment:
+      POSTGRES_USER: tse
+      POSTGRES_PASSWORD: tse
+      POSTGRES_DB: tse
+    volumes:
+      - tse_database_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - tse-network
+
+  tse-minio:
+    image: minio/minio:latest
+    container_name: tse-minio
+    # restart: always
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ACCESS_KEY=12345678
+      - MINIO_SECRET_KEY=password
+      - CONSOLE_ACCESS_KEY=test
+      - CONSOLE_SECRET_KEY=test
+    command: server --address ":9000" --console-address ":9001" /data
+    volumes:
+      - tse_storage_data:/data
+    networks:
+      - tse-network
+
+  tse-imgproxy:
+    image: ghcr.io/imgproxy/imgproxy:latest
+    container_name: tse-imgproxy
+    restart: unless-stopped
+    environment:
+      # For now, run insecure mode
+      IMGPROXY_ALLOW_ORIGIN: '*'
+      IMGPROXY_ENABLE_WEBP_DETECTION: 'true'
+      IMGPROXY_USE_ETAG: 'true'
+      IMGPROXY_ENABLE_AVIF: 'true'
+      IMGPROXY_ENABLE_JXL: 'true'
+      IMGPROXY_KEY: 736563726574
+      IMGPROXY_SALT: 68656C6C6F
+      IMGPROXY_USE_S3: true
+      IMGPROXY_S3_ENDPOINT: http://tse-minio:9000/
+      IMGPROXY_S3_BUCKET: tse
+      IMGPROXY_S3_REGION: local
+      AWS_ACCESS_KEY_ID: 12345678
+      AWS_SECRET_ACCESS_KEY: password
+      IMGPROXY_USE_S3_FORCE_PATH_STYLE: true
+      IMGPROXY_ALLOW_UNSAFE_URLS: true
+    ports:
+      - '8080:8080'
+    depends_on:
+      - tse-minio
+    networks:
+      - tse-network
+
+volumes:
+  tse_database_data:
+  tse_storage_data:
+
+networks:
+  tse-network:
+    driver: bridge
