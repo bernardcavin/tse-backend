@@ -1,9 +1,11 @@
+import enum
 import uuid
 
 from sqlalchemy import (
     JSON,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     String,
     func,
@@ -14,6 +16,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+class UserRole(str, enum.Enum):
+    MANAGER = "MANAGER"
+    EMPLOYEE = "EMPLOYEE"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -22,6 +29,19 @@ class User(Base):
     )
     username: Mapped[str] = mapped_column(String(50))
     name: Mapped[str] = mapped_column(String(50))
+    employee_num: Mapped[str] = mapped_column(String(50), nullable=True)
+    email: Mapped[str] = mapped_column(String(100), nullable=True)
+    nik: Mapped[str] = mapped_column(String(50), nullable=True)
+    position: Mapped[str] = mapped_column(String(100), nullable=True)
+    department: Mapped[str] = mapped_column(String(100), nullable=True)
+    phone_number: Mapped[str] = mapped_column(String(20), nullable=True)
+    hire_date: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    address: Mapped[str] = mapped_column(String(255), nullable=True)
+    emergency_contact_name: Mapped[str] = mapped_column(String(100), nullable=True)
+    emergency_contact_phone: Mapped[str] = mapped_column(String(20), nullable=True)
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole), default=UserRole.EMPLOYEE, nullable=False
+    )
 
     hashed_password: Mapped[str] = mapped_column(String(128))
 

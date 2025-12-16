@@ -9,7 +9,7 @@ appSKKMigas
 Dockerfile.app
 Dockerfile.frontend
 Dockerfile.req
-
+etc
 .venv
 .vscode
 uploads

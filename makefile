@@ -39,7 +39,7 @@ delete:
 	python app/delete_db.py
 
 db-reset:
-	python app/scripts/delete_alembic_versions.py && make delete && make migrate && make populate-db
+	python app/scripts/delete_alembic_versions.py && make delete && make db-migrate && make populate-db
 
 populate-db:
 	python app/populate_db.py

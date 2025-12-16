@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -5,7 +7,12 @@ from sqlalchemy.orm import Session
 from app.api.auth import models, schemas
 from app.api.auth.crud import (
     authenticate_user,
+    create_user,
+    delete_user,
+    get_all_employees,
     log_contribution,
+    require_manager,
+    update_user,
 )
 from app.api.auth.utils import get_current_user
 from app.core.dependencies import get_db_session, get_db_session_base
@@ -76,3 +83,153 @@ async def logout(
 ):
     log_contribution(db, user, "LOGOUT", "user", user.name)
     return create_api_response(success=True, message="Token expired successfully")
+
+
+# ---------------------------------------------------------------------------- #
+#                            EMPLOYEE MANAGEMENT                                #
+# ---------------------------------------------------------------------------- #
+
+
+@router.get(
+    "/employees",
+    summary="Get All Employees (Manager Only)",
+    tags=["Employee Management"],
+)
+async def get_employees(
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    # Verify user is manager
+    require_manager(user)
+
+    employees = get_all_employees(db)
+    return create_api_response(
+        success=True,
+        message="Employees retrieved successfully",
+        data=[schemas.UserSchema.model_validate(emp) for emp in employees],
+    )
+
+
+@router.post(
+    "/employees",
+    summary="Create Employee (Manager Only)",
+    tags=["Employee Management"],
+)
+async def create_employee(
+    employee_data: schemas.CreateEmployeeSchema,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    # Verify user is manager
+    require_manager(user)
+
+    # Convert string role to enum
+    role = (
+        models.UserRole.MANAGER
+        if employee_data.role == "MANAGER"
+        else models.UserRole.EMPLOYEE
+    )
+
+    new_employee = create_user(
+        db=db,
+        username=employee_data.username,
+        name=employee_data.name,
+        password=employee_data.password,
+        role=role,
+        employee_num=employee_data.employee_num,
+        email=employee_data.email,
+        nik=employee_data.nik,
+        position=employee_data.position,
+        department=employee_data.department,
+        phone_number=employee_data.phone_number,
+        hire_date=employee_data.hire_date.isoformat() if employee_data.hire_date else None,
+        address=employee_data.address,
+        emergency_contact_name=employee_data.emergency_contact_name,
+        emergency_contact_phone=employee_data.emergency_contact_phone,
+    )
+
+    log_contribution(db, user, "CREATED", "employee", new_employee.name)
+
+    return create_api_response(
+        success=True,
+        message="Employee created successfully",
+        data=schemas.UserSchema.model_validate(new_employee),
+    )
+
+
+@router.put(
+    "/employees/{employee_id}",
+    summary="Update Employee (Manager Only)",
+    tags=["Employee Management"],
+)
+async def update_employee(
+    employee_id: UUID,
+    employee_data: schemas.UpdateEmployeeSchema,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    # Verify user is manager
+    require_manager(user)
+
+    # Convert string role to enum if provided
+    role = None
+    if employee_data.role:
+        role = (
+            models.UserRole.MANAGER
+            if employee_data.role == "MANAGER"
+            else models.UserRole.EMPLOYEE
+        )
+
+    updated_employee = update_user(
+        db=db,
+        user_id=employee_id,
+        username=employee_data.username,
+        name=employee_data.name,
+        password=employee_data.password,
+        role=role,
+        employee_num=employee_data.employee_num,
+        email=employee_data.email,
+        nik=employee_data.nik,
+        position=employee_data.position,
+        department=employee_data.department,
+        phone_number=employee_data.phone_number,
+        hire_date=employee_data.hire_date.isoformat() if employee_data.hire_date else None,
+        address=employee_data.address,
+        emergency_contact_name=employee_data.emergency_contact_name,
+        emergency_contact_phone=employee_data.emergency_contact_phone,
+    )
+
+    log_contribution(db, user, "UPDATED", "employee", updated_employee.name)
+
+    return create_api_response(
+        success=True,
+        message="Employee updated successfully",
+        data=schemas.UserSchema.model_validate(updated_employee),
+    )
+
+
+@router.delete(
+    "/employees/{employee_id}",
+    summary="Delete Employee (Manager Only)",
+    tags=["Employee Management"],
+)
+async def delete_employee(
+    employee_id: UUID,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    # Verify user is manager
+    require_manager(user)
+
+    delete_user(db, employee_id)
+    log_contribution(db, user, "DELETED", "employee", str(employee_id))
+
+    return create_api_response(
+        success=True,
+        message="Employee deleted successfully",
+    )
+

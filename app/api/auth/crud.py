@@ -1,5 +1,6 @@
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.auth import models
@@ -103,3 +104,181 @@ def log_contribution(
     db.commit()
     db.refresh(contribution)
     return contribution
+
+
+# ---------------------------------------------------------------------------- #
+#                              EMPLOYEE MANAGEMENT                              #
+# ---------------------------------------------------------------------------- #
+
+
+def get_all_employees(db: Session) -> List[models.User]:
+    """Get all users (employees and managers)"""
+    return db.query(models.User).all()
+
+
+def create_user(
+    db: Session,
+    username: str,
+    name: str,
+    password: str,
+    role: models.UserRole = models.UserRole.EMPLOYEE,
+    employee_num: Optional[str] = None,
+    email: Optional[str] = None,
+    nik: Optional[str] = None,
+    position: Optional[str] = None,
+    department: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    hire_date: Optional[str] = None,
+    address: Optional[str] = None,
+    emergency_contact_name: Optional[str] = None,
+    emergency_contact_phone: Optional[str] = None,
+) -> models.User:
+    """Create a new user (employee or manager)"""
+    # Check if username already exists
+    existing_user = get_user_by_username(db, username)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists",
+        )
+
+    from datetime import datetime
+
+    hashed_password = pwd_context.hash(password)
+    new_user = models.User(
+        username=username,
+        name=name,
+        employee_num=employee_num,
+        email=email,
+        nik=nik,
+        position=position,
+        department=department,
+        phone_number=phone_number,
+        hire_date=datetime.fromisoformat(hire_date) if hire_date else None,
+        address=address,
+        emergency_contact_name=emergency_contact_name,
+        emergency_contact_phone=emergency_contact_phone,
+        hashed_password=hashed_password,
+        role=role,
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+def update_user(
+    db: Session,
+    user_id,
+    username: Optional[str] = None,
+    name: Optional[str] = None,
+    password: Optional[str] = None,
+    role: Optional[models.UserRole] = None,
+    employee_num: Optional[str] = None,
+    email: Optional[str] = None,
+    nik: Optional[str] = None,
+    position: Optional[str] = None,
+    department: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    hire_date: Optional[str] = None,
+    address: Optional[str] = None,
+    emergency_contact_name: Optional[str] = None,
+    emergency_contact_phone: Optional[str] = None,
+) -> models.User:
+    """Update user details"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if username:
+        # Check if new username is taken by another user
+        existing_user = get_user_by_username(db, username)
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists",
+            )
+        user.username = username
+
+    if name:
+        user.name = name
+
+    if employee_num is not None:
+        user.employee_num = employee_num
+
+    if email is not None:
+        user.email = email
+
+    if nik is not None:
+        user.nik = nik
+
+    if position is not None:
+        user.position = position
+
+    if department is not None:
+        user.department = department
+
+    if phone_number is not None:
+        user.phone_number = phone_number
+
+    if hire_date is not None:
+        from datetime import datetime
+        user.hire_date = datetime.fromisoformat(hire_date) if hire_date else None
+
+    if address is not None:
+        user.address = address
+
+    if emergency_contact_name is not None:
+        user.emergency_contact_name = emergency_contact_name
+
+    if emergency_contact_phone is not None:
+        user.emergency_contact_phone = emergency_contact_phone
+
+    if password:
+        user.hashed_password = pwd_context.hash(password)
+
+    if role:
+        user.role = role
+
+    from datetime import datetime
+
+    user.updated_at = datetime.now()
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user(db: Session, user_id) -> bool:
+    """Delete a user"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    db.delete(user)
+    db.commit()
+    return True
+
+
+# ---------------------------------------------------------------------------- #
+#                          ROLE-BASED AUTHORIZATION                            #
+# ---------------------------------------------------------------------------- #
+
+
+def require_manager(user: models.User):
+    """Dependency to require manager role"""
+    if user.role != models.UserRole.MANAGER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This operation requires manager privileges",
+        )
+    return user
+

@@ -81,7 +81,7 @@ async def update_inventory(
 
 @router.delete(
     "/{id}",
-    summary="Delete Inventory",
+    summary="Delete Inventory (Manager Only)",
     tags=["Inventory"],
 )
 async def delete_inventory(
@@ -90,6 +90,12 @@ async def delete_inventory(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    # Import here to avoid circular dependency
+    from app.api.auth.crud import require_manager
+
+    # Verify user is manager
+    require_manager(user)
+
     crud.delete_inventory(db, id)
     log_contribution(db, user, "DELETED", "inventory", f"id={id}")
     return create_api_response(success=True, message="Inventory deleted successfully")
