@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.attendance import routes as attendance_routes
 from app.api.auth import routes as auth_routes
 from app.api.facilities import routes as facilities_routes
 from app.api.files import routes as files_routes
@@ -105,6 +106,7 @@ app.include_router(auth_routes.router)
 app.include_router(inventory_routes.router)
 app.include_router(files_routes.router)
 app.include_router(facilities_routes.router)
+app.include_router(attendance_routes.router)
 
 
 if __name__ == "__main__":

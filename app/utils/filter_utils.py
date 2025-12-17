@@ -87,8 +87,8 @@ def get_paginated_data(
     # Apply pagination
     data = query.offset(offset).limit(limit).all()
 
-    # Validate Contractor data using the schema
-    data = [schema.model_validate(contractor) for contractor in data]
+    # Validate Contractor data using the schema and convert to JSON-serializable dicts
+    data = [schema.model_validate(contractor).model_dump(mode='json') for contractor in data]
 
     # Compute pagination metadata
     last_page = (total_count + limit - 1) // limit
