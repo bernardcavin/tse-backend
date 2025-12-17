@@ -21,6 +21,20 @@ class UserRole(str, enum.Enum):
     EMPLOYEE = "EMPLOYEE"
 
 
+class DepartmentEnum(str, enum.Enum):
+    HSE = "HSE"
+    FINANCE = "Finance"
+    OPERATION = "Operation"
+    IT = "IT"
+    ENGINEERING = "Engineering"
+    PROCUREMENT = "Procurement"
+    HR = "HR"
+    MAINTENANCE = "Maintenance"
+    QA_QC = "QA/QC"
+    SAFETY = "Safety"
+    OTHER = "Other"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -33,7 +47,9 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100), nullable=True)
     nik: Mapped[str] = mapped_column(String(50), nullable=True)
     position: Mapped[str] = mapped_column(String(100), nullable=True)
-    department: Mapped[str] = mapped_column(String(100), nullable=True)
+    department: Mapped[DepartmentEnum] = mapped_column(
+        Enum(DepartmentEnum), nullable=True
+    )
     phone_number: Mapped[str] = mapped_column(String(20), nullable=True)
     hire_date: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
     address: Mapped[str] = mapped_column(String(255), nullable=True)
