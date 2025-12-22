@@ -3,7 +3,7 @@ import uuid
 from datetime import date, datetime, time
 
 from sqlalchemy import ARRAY, Column, DateTime, Enum, ForeignKey, String, Text, Date, Time
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -54,11 +54,14 @@ class ControlMeasureEnum(str, enum.Enum):
 class HazardObservation(Base):
     __tablename__ = "hazard_observations"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # 🔹 Photos
+    photo_file_ids = Column(ARRAY(PG_UUID), nullable=True)
 
     # 🔹 Observer Information (Informasi Pengamat)
-    observer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    facility_id = Column(UUID(as_uuid=True), ForeignKey("facilities.id"), nullable=False)
+    observer_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    facility_id = Column(PG_UUID(as_uuid=True), ForeignKey("facilities.id"), nullable=False)
 
     # 🔹 Observation Date/Time (Tanggal/Waktu)
     observation_date = Column(Date, nullable=False)
@@ -93,7 +96,7 @@ class HazardObservation(Base):
     )
 
     # 🔹 Resolution Information (HSE Only)
-    resolved_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    resolved_by_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     resolution_notes = Column(Text, nullable=True)
 

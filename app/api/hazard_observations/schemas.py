@@ -18,6 +18,9 @@ from app.core.schema_operations import BaseModel
 class HazardObservationSchema(BaseModel):
     id: Optional[UUID] = Field(default=None, description="Unique identifier")
 
+    # Photo File IDs
+    photo_file_ids: Optional[List[UUID]] = Field(None, description="Photo file IDs")
+
     # Observer Information
     observer_id: UUID = Field(..., description="ID of the person who observed the hazard")
     observer_name: Optional[str] = Field(None, description="Name of the observer")
@@ -141,6 +144,11 @@ class HazardObservationCreateSchema(BaseModel):
         None, description="Corrective action taken or suggested"
     )
 
+    # Photo File IDs
+    photo_file_ids: Optional[List[UUID]] = Field(
+        None, description="Photo file IDs for uploaded images"
+    )
+
 
 class HazardObservationUpdateSchema(BaseModel):
     facility_id: Optional[UUID] = Field(None, description="Facility where hazard was observed")
@@ -175,6 +183,9 @@ class HazardObservationUpdateSchema(BaseModel):
     )
     status: Optional[ObservationStatus] = Field(
         None, description="Current status of the observation"
+    )
+    photo_file_ids: Optional[List[UUID]] = Field(
+        None, description="Photo file IDs for uploaded images"
     )
 
 
