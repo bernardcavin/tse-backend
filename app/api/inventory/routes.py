@@ -14,7 +14,7 @@ router = APIRouter(prefix="/inventory")
 
 
 @router.get(
-    "/",
+    "",
     summary="Get All inventory",
     tags=["Inventory"],
 )
@@ -30,7 +30,7 @@ async def get_all_services(
 
 
 @router.post(
-    "/",
+    "",
     summary="Create Inventory",
     tags=["Inventory"],
 )

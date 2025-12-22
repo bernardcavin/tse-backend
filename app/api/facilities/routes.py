@@ -14,7 +14,7 @@ router = APIRouter(prefix="/facilities")
 
 
 @router.get(
-    "/",
+    "",
     summary="Get All Facilitys",
     tags=["Facility"],
 )
@@ -30,7 +30,7 @@ async def get_all_services(
 
 
 @router.post(
-    "/",
+    "",
     summary="Create Facility",
     tags=["Facility"],
 )
