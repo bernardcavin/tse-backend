@@ -61,6 +61,7 @@ asyncio.get_event_loop().set_exception_handler(async_exception_handler)
 app = FastAPI(
     title=settings.PROJECT_NAME,
     root_path=settings.ROOT_PATH,
+    redirect_slashes=False
 )
 
 
