@@ -161,12 +161,29 @@ async def delete_observation(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    """Delete a hazard observation. Only managers can delete observations."""
-    # Only managers can delete observations
-    if user.role != UserRole.MANAGER:
+    """
+    Delete a hazard observation.
+    - Employees can delete their own observations if not resolved
+    - Managers can delete any observation
+    """
+    existing_observation = crud.get_observation(db, id)
+
+    # Check if user is the owner or a manager
+    is_owner = existing_observation["observer_id"] == str(user.id)
+    is_manager = user.role == UserRole.MANAGER
+
+    if not is_owner and not is_manager:
         raise HTTPException(
-            status_code=403, detail="Only managers can delete hazard observations"
+            status_code=403, detail="You can only delete your own hazard observations"
         )
+
+    # Employees can only delete unresolved observations
+    if is_owner and not is_manager:
+        if existing_observation["status"] == "resolved":
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot delete resolved observations. Only managers can delete resolved observations."
+            )
 
     crud.delete_observation(db, id)
     log_contribution(db, user, "DELETED", "hazard_observation", f"ID: {id}")

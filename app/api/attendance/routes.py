@@ -38,7 +38,7 @@ async def create_location(
 
     created_location = crud.create_attendance_location(db, location, user.id)
     log_contribution(
-        db, user, "CREATED", "attendance_location", created_location.location_name
+        db, user, "CREATED", "attendance_location", created_location["location_name"]
     )
     return create_api_response(
         success=True,
@@ -143,7 +143,7 @@ async def check_in(
     user=Depends(get_current_user),
 ):
     record = crud.check_in(db, request_data, user.id)
-    log_contribution(db, user, "CREATED", "attendance_check_in", f"Location: {record.location_id}")
+    log_contribution(db, user, "CREATED", "attendance_check_in", f"Location: {record['location_id']}")
     return create_api_response(
         success=True, message="Checked in successfully", data=record
     )
@@ -161,7 +161,7 @@ async def check_out(
     user=Depends(get_current_user),
 ):
     record = crud.check_out(db, request_data, user.id)
-    log_contribution(db, user, "UPDATED", "attendance_check_out", f"Record: {record.id}")
+    log_contribution(db, user, "UPDATED", "attendance_check_out", f"Record: {record["id"]}")
     return create_api_response(
         success=True, message="Checked out successfully", data=record
     )
