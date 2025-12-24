@@ -206,13 +206,13 @@ async def resolve_observation(
 ):
     """
     Resolve a hazard observation.
-    Only HSE department employees can resolve hazards (regardless of role).
+    Managers and HSE department employees can resolve hazards.
     """
-    # Only HSE department can resolve hazards
-    if user.department != DepartmentEnum.HSE:
+    # Managers and HSE department can resolve hazards
+    if user.role != UserRole.MANAGER and user.department != DepartmentEnum.HSE:
         raise HTTPException(
             status_code=403,
-            detail="Only HSE department employees can resolve hazard observations",
+            detail="Only managers and HSE department employees can resolve hazard observations",
         )
 
     resolved_observation = crud.resolve_observation(db, id, resolution,user.id)
