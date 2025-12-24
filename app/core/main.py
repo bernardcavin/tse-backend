@@ -18,6 +18,7 @@ from app.api.facilities import routes as facilities_routes
 from app.api.files import routes as files_routes
 from app.api.hazard_observations import routes as hazard_observations_routes
 from app.api.inventory import routes as inventory_routes
+from app.api.it_tickets import routes as it_tickets_routes
 from app.core.config import settings
 from app.core.error_handlers import (
     custom_exception_handler,
@@ -112,6 +113,7 @@ app.include_router(facilities_routes.router)
 app.include_router(attendance_routes.router)
 app.include_router(hazard_observations_routes.router)
 app.include_router(contacts_routes.router)
+app.include_router(it_tickets_routes.router)
 
 
 if __name__ == "__main__":

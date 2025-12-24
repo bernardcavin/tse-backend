@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.auth.crud import log_contribution
+from app.api.auth.crud import log_contribution, require_manager
 from app.api.auth.utils import get_current_user
 from app.api.facilities import crud, schemas
 from app.core.dependencies import get_db_session
@@ -23,6 +23,7 @@ async def get_all_services(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     facilities = crud.get_all_facilities(db, request)
     return create_api_response(
         success=True, message="Facilitys retrieved successfully", data=facilities
@@ -40,6 +41,7 @@ async def create_facility(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     crud.create_facility(db, facility)
     log_contribution(db, user, "CREATED", "facility", facility.facility_name)
     return create_api_response(success=True, message="Facility created successfully")
@@ -56,6 +58,7 @@ async def get_facility(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     facility = crud.get_facility(db, id)
     return create_api_response(
         success=True, message="Facility retrieved successfully", data=facility
@@ -74,6 +77,7 @@ async def update_facility(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     crud.update_facility(db, id, facility)
     log_contribution(db, user, "UPDATED", "facility", facility.facility_name)
     return create_api_response(success=True, message="Facility updated successfully")
@@ -90,6 +94,7 @@ async def delete_facility(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     crud.delete_facility(db, id)
     log_contribution(db, user, "DELETED", "facility", f"id={id}")
     return create_api_response(success=True, message="Facility deleted successfully")
@@ -105,6 +110,7 @@ async def get_facility_options(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     options = crud.get_facilities_options(db)
     return create_api_response(
         success=True, message="Facility options retrieved successfully", data=options
@@ -122,6 +128,7 @@ async def get_facility_coordinates(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
+    require_manager(user)
     coordinates = crud.get_facility_coordinates(db, id)
     return create_api_response(
         success=True,

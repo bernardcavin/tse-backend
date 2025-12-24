@@ -67,3 +67,16 @@ class UpdateEmployeeSchema(BaseModel):
     password: Optional[str] = None
     role: Optional[str] = None
 
+
+# Profile Update Schema (personal data only, no employment info)
+class UpdateProfileSchema(BaseModel):
+    username: Optional[str] = None
+    name: Optional[str] = None
+    nik: Optional[str] = None
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    password: Optional[str] = None
+

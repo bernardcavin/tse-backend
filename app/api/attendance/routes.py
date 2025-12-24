@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.attendance import crud, schemas
-from app.api.auth.crud import log_contribution
+from app.api.auth.crud import can_view_all_employees, log_contribution
 from app.api.auth.models import UserRole
 from app.api.auth.utils import get_current_user
 from app.core.dependencies import get_db_session
@@ -181,8 +181,8 @@ async def get_records(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    # Employees can only see their own records
-    if user.role != UserRole.MANAGER:
+    # Employees can only see their own records unless they're in HR/Finance
+    if not can_view_all_employees(user):
         user_id = user.id
 
     records = crud.get_attendance_records(
@@ -206,8 +206,8 @@ async def get_record(
 ):
     record = crud.get_attendance_record(db, id)
 
-    # Employees can only see their own records
-    if user.role != UserRole.MANAGER and record.user_id != user.id:
+    # Employees can only see their own records unless they're in HR/Finance
+    if not can_view_all_employees(user) and record.user_id != user.id:
         raise HTTPException(
             status_code=403, detail="You can only view your own attendance records"
         )

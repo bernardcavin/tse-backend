@@ -37,7 +37,7 @@ class AttendanceLocationSchema(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
         }
 
     class Meta:
@@ -82,7 +82,7 @@ class AttendanceRecordSchema(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
         }
 
     class Meta:

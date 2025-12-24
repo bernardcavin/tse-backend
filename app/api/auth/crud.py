@@ -254,7 +254,72 @@ def update_user(
     return user
 
 
+def update_profile(
+    db: Session,
+    user_id,
+    username: Optional[str] = None,
+    name: Optional[str] = None,
+    nik: Optional[str] = None,
+    email: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    address: Optional[str] = None,
+    emergency_contact_name: Optional[str] = None,
+    emergency_contact_phone: Optional[str] = None,
+    password: Optional[str] = None,
+) -> models.User:
+    """Update user's personal profile data (non-employment fields only)"""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if username is not None:
+        # Check if new username is taken by another user
+        existing_user = get_user_by_username(db, username)
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists",
+            )
+        user.username = username
+
+    if nik is not None:
+        user.nik = nik
+
+    if name is not None:
+        user.name = name
+
+    if email is not None:
+        user.email = email
+
+    if phone_number is not None:
+        user.phone_number = phone_number
+
+    if address is not None:
+        user.address = address
+
+    if emergency_contact_name is not None:
+        user.emergency_contact_name = emergency_contact_name
+
+    if emergency_contact_phone is not None:
+        user.emergency_contact_phone = emergency_contact_phone
+
+    if password:
+        user.hashed_password = pwd_context.hash(password)
+
+    from datetime import datetime
+
+    user.updated_at = datetime.now()
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def delete_user(db: Session, user_id) -> bool:
+
     """Delete a user"""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
@@ -281,4 +346,12 @@ def require_manager(user: models.User):
             detail="This operation requires manager privileges",
         )
     return user
+
+
+def can_view_all_employees(user: models.User) -> bool:
+    """Check if user can view all employee data (Managers, HR, and Finance)"""
+    return (
+        user.role == models.UserRole.MANAGER or
+        user.department in [models.DepartmentEnum.HR, models.DepartmentEnum.FINANCE]
+    )
 

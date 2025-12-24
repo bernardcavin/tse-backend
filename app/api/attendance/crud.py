@@ -267,8 +267,8 @@ def get_attendance_records(
     if end_date:
         query = query.filter(AttendanceRecord.check_in_time <= end_date)
 
-    # Get paginated data
-    result = get_paginated_data(db, request, AttendanceRecord, AttendanceRecordSchema, "check_in_time")
+    # Get paginated data with the filtered query
+    result = get_paginated_data(db, request, AttendanceRecord, AttendanceRecordSchema, "check_in_time", base_query=query)
     
     # Populate employee_name and location_name for each record
     for record in result["data"]:

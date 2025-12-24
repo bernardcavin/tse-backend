@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session
 from app.api.auth import models, schemas
 from app.api.auth.crud import (
     authenticate_user,
+    can_view_all_employees,
     create_user,
     delete_user,
     get_all_employees,
     log_contribution,
     require_manager,
+    update_profile,
     update_user,
 )
 from app.api.auth.utils import get_current_user
@@ -85,6 +87,37 @@ async def logout(
     return create_api_response(success=True, message="Token expired successfully")
 
 
+@router.put("/profile", summary="Update Own Profile", tags=["User"])
+async def update_user_profile(
+    profile_data: schemas.UpdateProfileSchema,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    """Allow users to update their own profile data (personal fields only)"""
+    updated_user = update_profile(
+        db=db,
+        user_id=user.id,
+        username=profile_data.username,
+        name=profile_data.name,
+        nik=profile_data.nik,
+        email=profile_data.email,
+        phone_number=profile_data.phone_number,
+        address=profile_data.address,
+        emergency_contact_name=profile_data.emergency_contact_name,
+        emergency_contact_phone=profile_data.emergency_contact_phone,
+        password=profile_data.password,
+    )
+
+    log_contribution(db, user, "UPDATED", "profile", user.name)
+
+    return create_api_response(
+        success=True,
+        message="Profile updated successfully",
+        data=schemas.UserSchema.model_validate(updated_user),
+    )
+
+
 # ---------------------------------------------------------------------------- #
 #                            EMPLOYEE MANAGEMENT                                #
 # ---------------------------------------------------------------------------- #
@@ -92,7 +125,7 @@ async def logout(
 
 @router.get(
     "/employees",
-    summary="Get All Employees (Manager Only)",
+    summary="Get All Employees (Manager, HR, Finance)",
     tags=["Employee Management"],
 )
 async def get_employees(
@@ -100,14 +133,51 @@ async def get_employees(
     db: Session = Depends(get_db_session),
     request=Depends(get_request),
 ):
-    # Verify user is manager
-    require_manager(user)
+    # Verify user can view all employees (Manager, HR, or Finance)
+    if not can_view_all_employees(user):
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have permission to view all employees"
+        )
 
     employees = get_all_employees(db)
     return create_api_response(
         success=True,
         message="Employees retrieved successfully",
         data=[schemas.UserSchema.model_validate(emp) for emp in employees],
+    )
+
+
+@router.get(
+    "/employees/{employee_id}",
+    summary="Get Employee by ID (Manager, HR, Finance)",
+    tags=["Employee Management"],
+)
+async def get_employee(
+    employee_id: UUID,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    # Verify user can view all employees (Manager, HR, or Finance)
+    if not can_view_all_employees(user):
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have permission to view employee details"
+        )
+
+    # Get the employee
+    employee = db.query(models.User).filter(models.User.id == employee_id).first()
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found"
+        )
+
+    return create_api_response(
+        success=True,
+        message="Employee retrieved successfully",
+        data=schemas.UserSchema.model_validate(employee),
     )
 
 

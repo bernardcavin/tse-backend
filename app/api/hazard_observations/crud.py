@@ -104,9 +104,9 @@ def get_observations(
     if end_date:
         query = query.filter(HazardObservation.observation_date <= end_date)
 
-    # Use standard pagination utility
+    # Use standard pagination utility with filtered query
     result = get_paginated_data(
-        db, request, HazardObservation, HazardObservationSchema, "observation_date"
+        db, request, HazardObservation, HazardObservationSchema, "observation_date", base_query=query
     )
     
     # Enrich each observation with facility and observer names

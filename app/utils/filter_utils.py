@@ -60,7 +60,7 @@ def apply_filters(
 
 
 def get_paginated_data(
-    db: Session, request: Request, model, schema, initial_sorted_column
+    db: Session, request: Request, model, schema, initial_sorted_column, base_query=None
 ):
     # Extract pagination and sorting parameters from the request
     page = int(request.query_params.get("page", 1))
@@ -72,8 +72,8 @@ def get_paginated_data(
     # Calculate offset for pagination
     offset = (page - 1) * limit
 
-    # Base query
-    query = db.query(model)
+    # Base query - use provided query or create new one
+    query = base_query if base_query is not None else db.query(model)
 
     # Apply filters if provided
     if filter_param:
