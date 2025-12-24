@@ -304,3 +304,67 @@ def get_analytics(db: Session) -> dict:
         "top_facilities": top_facilities,
         "monthly_trend": monthly_data,
     }
+
+
+def get_observations_for_export(db: Session, observer_id: Optional[UUID] = None) -> list[dict]:
+    """Get all hazard observations without pagination for CSV export."""
+    from app.api.auth.models import User
+    from app.api.facilities.models import Facility
+    
+    # Status labels for export
+    STATUS_LABELS = {
+        "open": "Open",
+        "in_progress": "In Progress",
+        "resolved": "Resolved",
+        "closed": "Closed",
+    }
+    
+    query = db.query(HazardObservation)
+    
+    if observer_id:
+        query = query.filter(HazardObservation.observer_id == observer_id)
+    
+    observations = query.order_by(HazardObservation.observation_date.desc()).all()
+    
+    # Get all unique facility, observer, and resolver IDs
+    facility_ids = {obs.facility_id for obs in observations if obs.facility_id}
+    observer_ids = {obs.observer_id for obs in observations if obs.observer_id}
+    resolver_ids = {obs.resolved_by_id for obs in observations if obs.resolved_by_id}
+    
+    # Fetch facilities and users in bulk
+    facilities = db.query(Facility).filter(Facility.id.in_(facility_ids)).all() if facility_ids else []
+    users = db.query(User).filter(User.id.in_(observer_ids | resolver_ids)).all() if observer_ids or resolver_ids else []
+    
+    # Create lookup dictionaries
+    facility_map = {f.id: f.facility_name for f in facilities}
+    user_map = {u.id: u.name for u in users}
+    
+    result = []
+    for obs in observations:
+        # Format arrays as comma-separated strings
+        hazard_types_str = ", ".join(obs.hazard_types) if obs.hazard_types else ""
+        potential_risks_str = ", ".join(obs.potential_risks) if obs.potential_risks else ""
+        unsafe_reasons_str = ", ".join(obs.unsafe_reasons) if obs.unsafe_reasons else ""
+        control_measures_str = ", ".join(obs.control_measures) if obs.control_measures else ""
+        
+        result.append({
+            "observation_date": obs.observation_date.strftime("%Y-%m-%d") if obs.observation_date else "",
+            "observation_time": obs.observation_time or "",
+            "facility": facility_map.get(obs.facility_id, "") if obs.facility_id else "",
+            "observer": user_map.get(obs.observer_id, "") if obs.observer_id else "",
+            "unsafe_action_condition": obs.unsafe_action_condition or "",
+            "hazard_types": hazard_types_str,
+            "potential_risks": potential_risks_str,
+            "potential_risk_other": obs.potential_risk_other or "",
+            "unsafe_reasons": unsafe_reasons_str,
+            "unsafe_reason_other": obs.unsafe_reason_other or "",
+            "control_measures": control_measures_str,
+            "control_measure_other": obs.control_measure_other or "",
+            "corrective_action": obs.corrective_action or "",
+            "status": STATUS_LABELS.get(obs.status.value, obs.status.value) if obs.status else "",
+            "resolved_by": user_map.get(obs.resolved_by_id, "") if obs.resolved_by_id else "",
+            "resolved_at": obs.resolved_at.strftime("%Y-%m-%d %H:%M") if obs.resolved_at else "",
+            "resolution_notes": obs.resolution_notes or "",
+        })
+    
+    return result

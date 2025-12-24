@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.attendance import routes as attendance_routes
 from app.api.auth import routes as auth_routes
+from app.api.contacts import routes as contacts_routes
 from app.api.facilities import routes as facilities_routes
 from app.api.files import routes as files_routes
 from app.api.hazard_observations import routes as hazard_observations_routes
@@ -110,6 +111,7 @@ app.include_router(files_routes.router)
 app.include_router(facilities_routes.router)
 app.include_router(attendance_routes.router)
 app.include_router(hazard_observations_routes.router)
+app.include_router(contacts_routes.router)
 
 
 if __name__ == "__main__":

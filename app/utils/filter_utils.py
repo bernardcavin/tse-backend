@@ -66,6 +66,7 @@ def get_paginated_data(
     page = int(request.query_params.get("page", 1))
     limit = int(request.query_params.get("limit", 10))
     sort = request.query_params.get("sort", f"{initial_sorted_column}:desc")
+    filter_param = request.query_params.get("filter", None)
     sort_column, sort_order = sort.split(":")
 
     # Calculate offset for pagination
@@ -73,6 +74,10 @@ def get_paginated_data(
 
     # Base query
     query = db.query(model)
+
+    # Apply filters if provided
+    if filter_param:
+        query = apply_filters(model, filter_param, query)
 
     # Apply sorting
     if sort_column and sort_order:

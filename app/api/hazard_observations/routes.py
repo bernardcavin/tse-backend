@@ -225,6 +225,31 @@ async def resolve_observation(
 
 
 @router.get(
+    "/export/csv",
+    summary="Export Hazard Observations to CSV",
+    tags=["Hazard Observations"],
+)
+async def export_observations_csv(
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    """
+    Export all hazard observations data for CSV download.
+    Only managers and HSE employees can export all data.
+    """
+    observer_id = None
+    # Non-HSE employees can only export their own observations
+    if user.role != UserRole.MANAGER and user.department != DepartmentEnum.HSE:
+        observer_id = user.id
+
+    observations = crud.get_observations_for_export(db, observer_id)
+    return create_api_response(
+        success=True, message="Observations exported successfully", data=observations
+    )
+
+
+@router.get(
     "/analytics/summary",
     summary="Get Hazard Observation Analytics",
     tags=["Hazard Observations"],
