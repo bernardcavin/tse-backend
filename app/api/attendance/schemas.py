@@ -50,6 +50,10 @@ class AttendanceRecordSchema(BaseModel):
     # User & Location
     user_id: UUID = Field(..., description="Employee user ID")
     location_id: UUID = Field(..., description="Attendance location ID")
+    
+    # Names for display
+    employee_name: Optional[str] = Field(None, description="Employee name")
+    location_name: Optional[str] = Field(None, description="Location name")
 
     # Check-in Details
     check_in_time: datetime = Field(..., description="Check-in timestamp")

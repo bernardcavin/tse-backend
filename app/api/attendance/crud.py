@@ -262,8 +262,21 @@ def get_attendance_records(
     if end_date:
         query = query.filter(AttendanceRecord.check_in_time <= end_date)
 
-    # Use standard pagination utility
-    return get_paginated_data(db, request, AttendanceRecord, AttendanceRecordSchema, "check_in_time")
+    # Get paginated data
+    result = get_paginated_data(db, request, AttendanceRecord, AttendanceRecordSchema, "check_in_time")
+    
+    # Populate employee_name and location_name for each record
+    for record in result["data"]:
+        # Get employee name
+        from app.api.auth.models import User
+        user = db.query(User).filter(User.id == record["user_id"]).first()
+        record["employee_name"] = user.name if user else None
+        
+        # Get location name
+        location = db.query(AttendanceLocation).filter(AttendanceLocation.id == record["location_id"]).first()
+        record["location_name"] = location.location_name if location else None
+    
+    return result
 
 
 def get_attendance_record(db: Session, record_id: UUID) -> AttendanceRecordSchema:
