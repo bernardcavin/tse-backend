@@ -156,9 +156,14 @@ def check_in(db: Session, request: CheckInRequest, user_id: UUID) -> AttendanceR
     if not location.is_active:
         raise HTTPException(status_code=400, detail="Attendance location is inactive")
 
-    # Validate QR code
-    if location.qr_code_data != request.qr_code_data:
-        raise HTTPException(status_code=400, detail="Invalid QR code")
+    # Validate QR code - compare parsed JSON to handle property order differences
+    try:
+        stored_qr = json.loads(location.qr_code_data) if location.qr_code_data else {}
+        submitted_qr = json.loads(request.qr_code_data) if request.qr_code_data else {}
+        if stored_qr != submitted_qr:
+            raise HTTPException(status_code=400, detail="Invalid QR code")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid QR code format")
 
     # Validate geolocation
     if not validate_geolocation(

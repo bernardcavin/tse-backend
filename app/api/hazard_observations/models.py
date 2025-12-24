@@ -38,7 +38,6 @@ class UnsafeReasonEnum(str, enum.Enum):
     LACK_OF_KNOWLEDGE = "lack_of_knowledge"  # Kurangnya Pengetahuan
     INCORRECT_PPE_USE = "incorrect_ppe_use"  # Penggunaan APD yang Tidak Tepat
     PROCEDURE_VIOLATION = "procedure_violation"  # Melanggar Prosedur
-    NO_LOTO_SOCIALIZATION = "no_loto_socialization"  # Tidak ada Sosialisasi Lock Out Tag Out
     OTHER = "other"  # Lain-Lain
 
 
