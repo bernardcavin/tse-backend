@@ -78,9 +78,9 @@ app.add_middleware(TimeoutMiddleware, timeout=999)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://test-apetrol.site",
+        "http://dev-apetrol.site",
         "http://localhost:5173",
-        "https://test-apetrol.site",
+        "https://dev-apetrol.site",
     ],
     allow_credentials=True,
     allow_methods=["*"],
