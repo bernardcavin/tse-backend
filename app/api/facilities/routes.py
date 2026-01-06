@@ -23,7 +23,7 @@ async def get_all_services(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    require_manager(user)
+    # require_manager(user)
     facilities = crud.get_all_facilities(db, request)
     return create_api_response(
         success=True, message="Facilitys retrieved successfully", data=facilities
@@ -110,7 +110,7 @@ async def get_facility_options(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    require_manager(user)
+    # require_manager(user)
     options = crud.get_facilities_options(db)
     return create_api_response(
         success=True, message="Facility options retrieved successfully", data=options
@@ -128,7 +128,7 @@ async def get_facility_coordinates(
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    require_manager(user)
+    # require_manager(user)
     coordinates = crud.get_facility_coordinates(db, id)
     return create_api_response(
         success=True,
