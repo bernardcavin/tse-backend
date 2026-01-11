@@ -14,18 +14,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.attendance import routes as attendance_routes
 from app.api.auth import routes as auth_routes
 from app.api.contacts import routes as contacts_routes
+from app.api.expeditions import routes as expeditions_routes
 from app.api.facilities import routes as facilities_routes
 from app.api.files import routes as files_routes
 from app.api.hazard_observations import routes as hazard_observations_routes
+from app.api.housekeeping import routes as housekeeping_routes
 from app.api.inventory import routes as inventory_routes
 from app.api.it_tickets import routes as it_tickets_routes
+from app.api.requests import routes as requests_routes
 from app.core.config import settings
 from app.core.error_handlers import (
     custom_exception_handler,
     custom_http_exception_handler,
-    # custom_request_validation_exception_handler,
     custom_starlette_http_exception_handler,
-    # validation_exception_handler
     sqlalchemy_exception_handler,
 )
 from app.core.middlewares import CustomHeaderMiddleware, TimeoutMiddleware
@@ -67,13 +68,8 @@ app = FastAPI(
 )
 
 
-# app.add_middleware(GZipMiddleware, minimum_size=1000)  # Compress responses larger than 1000 bytes
 app.add_middleware(CustomHeaderMiddleware)
 app.add_middleware(TimeoutMiddleware, timeout=999)
-
-
-# app.add_middleware(HTTPSRedirectMiddleware)
-# app.add_middleware(ProxyHeadersMiddleware)
 
 
 app.add_middleware(
@@ -87,7 +83,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 @app.middleware("http")
@@ -112,8 +107,11 @@ app.include_router(files_routes.router)
 app.include_router(facilities_routes.router)
 app.include_router(attendance_routes.router)
 app.include_router(hazard_observations_routes.router)
+app.include_router(housekeeping_routes.router)
 app.include_router(contacts_routes.router)
 app.include_router(it_tickets_routes.router)
+app.include_router(expeditions_routes.router)
+app.include_router(requests_routes.router)
 
 
 if __name__ == "__main__":
