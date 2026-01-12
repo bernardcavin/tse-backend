@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.api.hazard_observations import crud, schemas
+from app.api.safety_observations import crud, schemas
 from app.api.auth.crud import log_contribution
 from app.api.auth.models import DepartmentEnum, UserRole
 from app.api.auth.utils import get_current_user
@@ -13,45 +13,45 @@ from app.core.dependencies import get_db_session
 from app.core.schema_operations import create_api_response
 from app.core.utils.request import get_request
 
-router = APIRouter(prefix="/hazard-observations", tags=["Hazard Observations"])
+router = APIRouter(prefix="/safety-observations", tags=["Safety Observations"])
 
 
 # ============================================================================
-# HAZARD OBSERVATIONS
+# SAFETY OBSERVATIONS
 # ============================================================================
 
 
 @router.post(
     "",
-    summary="Create Hazard Observation",
-    tags=["Hazard Observations"],
+    summary="Create Safety Observation",
+    tags=["Safety Observations"],
 )
 async def create_observation(
-    observation: schemas.HazardObservationCreateSchema,
+    observation: schemas.SafetyObservationCreateSchema,
     db: Session = Depends(get_db_session),
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
-    """Create a new hazard observation. All authenticated users can create observations."""
+    """Create a new safety observation. All authenticated users can create observations."""
     created_observation = crud.create_observation(db, observation, user.id)
     log_contribution(
         db,
         user,
         "CREATED",
-        "hazard_observation",
+        "safety_observation",
         f"Facility: {created_observation['facility_id']}",
     )
     return create_api_response(
         success=True,
-        message="Hazard observation created successfully",
+        message="Safety observation created successfully",
         data=created_observation,
     )
 
 
 @router.get(
     "",
-    summary="Get All Hazard Observations",
-    tags=["Hazard Observations"],
+    summary="Get All Safety Observations",
+    tags=["Safety Observations"],
 )
 async def get_observations(
     facility_id: Optional[UUID] = None,
@@ -63,7 +63,7 @@ async def get_observations(
     user=Depends(get_current_user),
 ):
     """
-    Get hazard observations with filters.
+    Get safety observations with filters.
     - Employees (non-HSE) can only see their own observations
     - Managers and HSE employees can see all observations
     """
@@ -83,8 +83,8 @@ async def get_observations(
 
 @router.get(
     "/{id}",
-    summary="Get Hazard Observation",
-    tags=["Hazard Observations"],
+    summary="Get Safety Observation",
+    tags=["Safety Observations"],
 )
 async def get_observation(
     id: UUID,
@@ -93,7 +93,7 @@ async def get_observation(
     user=Depends(get_current_user),
 ):
     """
-    Get a specific hazard observation.
+    Get a specific safety observation.
     - Employees (non-HSE) can only view their own observations
     - Managers and HSE employees can view any observation
     """
@@ -106,7 +106,7 @@ async def get_observation(
         and observation["observer_id"] != str(user.id)
     ):
         raise HTTPException(
-            status_code=403, detail="You can only view your own hazard observations"
+            status_code=403, detail="You can only view your own safety observations"
         )
 
     return create_api_response(
@@ -116,18 +116,18 @@ async def get_observation(
 
 @router.put(
     "/{id}",
-    summary="Update Hazard Observation",
-    tags=["Hazard Observations"],
+    summary="Update Safety Observation",
+    tags=["Safety Observations"],
 )
 async def update_observation(
     id: UUID,
-    observation: schemas.HazardObservationUpdateSchema,
+    observation: schemas.SafetyObservationUpdateSchema,
     db: Session = Depends(get_db_session),
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
     """
-    Update a hazard observation.
+    Update a safety observation.
     - Employees can only update their own observations
     - Managers can update any observation
     """
@@ -138,11 +138,11 @@ async def update_observation(
         user.id
     ):
         raise HTTPException(
-            status_code=403, detail="You can only update your own hazard observations"
+            status_code=403, detail="You can only update your own safety observations"
         )
 
     updated_observation = crud.update_observation(db, id, observation)
-    log_contribution(db, user, "UPDATED", "hazard_observation", f"ID: {id}")
+    log_contribution(db, user, "UPDATED", "safety_observation", f"ID: {id}")
     return create_api_response(
         success=True,
         message="Observation updated successfully",
@@ -152,8 +152,8 @@ async def update_observation(
 
 @router.delete(
     "/{id}",
-    summary="Delete Hazard Observation",
-    tags=["Hazard Observations"],
+    summary="Delete Safety Observation",
+    tags=["Safety Observations"],
 )
 async def delete_observation(
     id: UUID,
@@ -162,7 +162,7 @@ async def delete_observation(
     user=Depends(get_current_user),
 ):
     """
-    Delete a hazard observation.
+    Delete a safety observation.
     - Employees can delete their own observations if not resolved
     - Managers can delete any observation
     """
@@ -174,19 +174,19 @@ async def delete_observation(
 
     if not is_owner and not is_manager:
         raise HTTPException(
-            status_code=403, detail="You can only delete your own hazard observations"
+            status_code=403, detail="You can only delete your own safety observations"
         )
 
     # Employees can only delete unresolved observations
     if is_owner and not is_manager:
-        if existing_observation["status"] == "resolved":
+        if existing_observation["status"] in ["resolved", "closed"]:
             raise HTTPException(
                 status_code=403,
-                detail="Cannot delete resolved observations. Only managers can delete resolved observations."
+                detail="Cannot delete resolved/closed observations. Only managers can delete resolved/closed observations."
             )
 
     crud.delete_observation(db, id)
-    log_contribution(db, user, "DELETED", "hazard_observation", f"ID: {id}")
+    log_contribution(db, user, "DELETED", "safety_observation", f"ID: {id}")
     return create_api_response(
         success=True, message="Observation deleted successfully"
     )
@@ -194,29 +194,29 @@ async def delete_observation(
 
 @router.put(
     "/{id}/resolve",
-    summary="Resolve Hazard Observation",
-    tags=["Hazard Observations"],
+    summary="Resolve Safety Observation",
+    tags=["Safety Observations"],
 )
 async def resolve_observation(
     id: UUID,
-    resolution: schemas.HazardObservationResolveSchema,
+    resolution: schemas.SafetyObservationResolveSchema,
     db: Session = Depends(get_db_session),
     request=Depends(get_request),
     user=Depends(get_current_user),
 ):
     """
-    Resolve a hazard observation.
-    Managers and HSE department employees can resolve hazards.
+    Resolve a safety observation.
+    Managers and HSE department employees can resolve observations.
     """
-    # Managers and HSE department can resolve hazards
+    # Managers and HSE department can resolve Safetys
     if user.role != UserRole.MANAGER and user.department != DepartmentEnum.HSE:
         raise HTTPException(
             status_code=403,
-            detail="Only managers and HSE department employees can resolve hazard observations",
+            detail="Only managers and HSE department employees can resolve safety observations",
         )
 
-    resolved_observation = crud.resolve_observation(db, id, resolution,user.id)
-    log_contribution(db, user, "RESOLVED", "hazard_observation", f"ID: {id}")
+    resolved_observation = crud.resolve_observation(db, id, resolution, user.id)
+    log_contribution(db, user, "RESOLVED", "safety_observation", f"ID: {id}")
     return create_api_response(
         success=True,
         message="Observation resolved successfully",
@@ -224,10 +224,42 @@ async def resolve_observation(
     )
 
 
+@router.put(
+    "/{id}/close",
+    summary="Close Safety Observation",
+    tags=["Safety Observations"],
+)
+async def close_observation(
+    id: UUID,
+    close_data: schemas.SafetyObservationCloseSchema,
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    """
+    Close an invalid safety observation.
+    Managers and HSE department employees can close observations.
+    """
+    # Managers and HSE department can close Safetys
+    if user.role != UserRole.MANAGER and user.department != DepartmentEnum.HSE:
+        raise HTTPException(
+            status_code=403,
+            detail="Only managers and HSE department employees can close safety observations",
+        )
+
+    closed_observation = crud.close_observation(db, id, close_data, user.id)
+    log_contribution(db, user, "CLOSED", "safety_observation", f"ID: {id}")
+    return create_api_response(
+        success=True,
+        message="Observation closed successfully",
+        data=closed_observation,
+    )
+
+
 @router.get(
     "/export/csv",
-    summary="Export Hazard Observations to CSV",
-    tags=["Hazard Observations"],
+    summary="Export Safety Observations to CSV",
+    tags=["Safety Observations"],
 )
 async def export_observations_csv(
     db: Session = Depends(get_db_session),
@@ -235,7 +267,7 @@ async def export_observations_csv(
     user=Depends(get_current_user),
 ):
     """
-    Export all hazard observations data for CSV download.
+    Export all safety observations data for CSV download.
     Only managers and HSE employees can export all data.
     """
     observer_id = None
@@ -251,8 +283,8 @@ async def export_observations_csv(
 
 @router.get(
     "/analytics/summary",
-    summary="Get Hazard Observation Analytics",
-    tags=["Hazard Observations"],
+    summary="Get Safety Observation Analytics",
+    tags=["Safety Observations"],
 )
 async def get_analytics(
     db: Session = Depends(get_db_session),
@@ -260,14 +292,14 @@ async def get_analytics(
     user=Depends(get_current_user),
 ):
     """
-    Get hazard observation analytics.
+    Get safety observation analytics.
     Only managers and HSE employees can access analytics.
     """
     # Only managers and HSE employees can access analytics
     if user.role != UserRole.MANAGER and user.department != DepartmentEnum.HSE:
         raise HTTPException(
             status_code=403,
-            detail="Only managers and HSE employees can access hazard analytics",
+            detail="Only managers and HSE employees can access safety analytics",
         )
 
     analytics = crud.get_analytics(db)
