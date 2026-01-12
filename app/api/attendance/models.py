@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    Time,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -39,6 +40,7 @@ class AttendanceLocation(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     radius_meters = Column(Integer, nullable=False, default=100)  # Geofence radius
+    attendance_max_time = Column(Time, nullable=True)  # Max time for auto-checkout
 
     # 🔹 QR Code
     qr_code_data = Column(Text, nullable=True)  # Stores the QR code payload

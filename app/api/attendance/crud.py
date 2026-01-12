@@ -178,6 +178,15 @@ def check_in(db: Session, request: CheckInRequest, user_id: UUID) -> AttendanceR
             detail=f"You are not within the required {location.radius_meters}m radius of the attendance location",
         )
 
+    # Check max time
+    if location.attendance_max_time:
+        current_time = datetime.utcnow().time()
+        if current_time > location.attendance_max_time:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot check in after {location.attendance_max_time}",
+            )
+
     # Check if user already has an active check-in
     existing_record = (
         db.query(AttendanceRecord)
@@ -233,7 +242,20 @@ def check_out(db: Session, request: CheckOutRequest, user_id: UUID) -> Attendanc
         raise HTTPException(status_code=400, detail="Already checked out")
 
     # Update record
-    record.check_out_time = datetime.utcnow()
+    check_out_time = datetime.utcnow()
+    
+    # Check max time from location
+    if record.location.attendance_max_time:
+        # Calculate max checkout datetime for the check-in day
+        max_checkout_datetime = datetime.combine(
+            record.check_in_time.date(), record.location.attendance_max_time
+        )
+        
+        # If current time is after max time, use max time
+        if check_out_time > max_checkout_datetime:
+            check_out_time = max_checkout_datetime
+
+    record.check_out_time = check_out_time
     record.check_out_latitude = request.latitude
     record.check_out_longitude = request.longitude
     record.status = AttendanceStatus.CHECKED_OUT

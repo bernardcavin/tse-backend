@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Optional
 from uuid import UUID
 
@@ -22,6 +22,7 @@ class AttendanceLocationSchema(BaseModel):
     radius_meters: int = Field(
         default=100, description="Geofence radius in meters", ge=1, le=10000
     )
+    attendance_max_time: Optional[time] = Field(None, description="Max time for auto-checkout")
 
     # QR Code
     qr_code_data: Optional[str] = Field(None, description="QR code payload")
@@ -37,7 +38,8 @@ class AttendanceLocationSchema(BaseModel):
     class Config:
         from_attributes = True
         json_encoders = {
-            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None,
+            time: lambda v: v.strftime('%H:%M:%S') if v else None
         }
 
     class Meta:
