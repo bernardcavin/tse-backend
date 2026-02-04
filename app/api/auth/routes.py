@@ -143,7 +143,7 @@ async def get_employees(
     return create_api_response(
         success=True,
         message="Employees retrieved successfully",
-        data=[schemas.UserSchema.model_validate(emp) for emp in employees],
+        data=employees,
     )
 
 
