@@ -1,9 +1,5 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-
 from app.api.auth import models, schemas
 from app.api.auth.crud import (
     authenticate_user,
@@ -24,6 +20,9 @@ from app.core.security import (
     get_current_token,
 )
 from app.core.utils.request import get_request
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/auth")
 
@@ -140,7 +139,7 @@ async def get_employees(
             detail="You do not have permission to view all employees"
         )
 
-    employees = get_all_employees(db)
+    employees = get_all_employees(db, request)
     return create_api_response(
         success=True,
         message="Employees retrieved successfully",

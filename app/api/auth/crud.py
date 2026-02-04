@@ -1,10 +1,11 @@
 from typing import List, Literal, Optional
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
 from app.api.auth import models
+from app.api.auth.schemas import UserSchema
 from app.core.security import pwd_context
+from app.utils.filter_utils import get_paginated_data
+from fastapi import HTTPException, Request, status
+from sqlalchemy.orm import Session
 
 # ---------------------------------------------------------------------------- #
 #                                  USER LOGIN                                  #
@@ -111,9 +112,9 @@ def log_contribution(
 # ---------------------------------------------------------------------------- #
 
 
-def get_all_employees(db: Session) -> List[models.User]:
+def get_all_employees(db: Session, request: Request):
     """Get all users (employees and managers)"""
-    return db.query(models.User).all()
+    return get_paginated_data(db, request, models.User, UserSchema, "username", )
 
 
 def create_user(
