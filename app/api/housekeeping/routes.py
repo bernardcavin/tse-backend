@@ -1,9 +1,6 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-
 from app.api.auth.crud import log_contribution
 from app.api.auth.models import DepartmentEnum, UserRole
 from app.api.auth.utils import get_current_user
@@ -11,6 +8,8 @@ from app.api.housekeeping import crud, schemas
 from app.core.dependencies import get_db_session
 from app.core.schema_operations import create_api_response
 from app.core.utils.request import get_request
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/housekeeping", tags=["Housekeeping"])
 
@@ -76,7 +75,7 @@ async def get_housekeeping_list(
     """
     # All employees can view housekeeping checklists
     housekeeping_list = crud.get_housekeeping_list(
-        db, request, facility_id, inspector_id, start_date, end_date
+        db, request
     )
     return create_api_response(
         success=True,

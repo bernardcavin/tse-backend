@@ -2,16 +2,16 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import HTTPException
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-
 from app.api.housekeeping.models import Housekeeping
 from app.api.housekeeping.schemas import (
     HousekeepingCreateSchema,
     HousekeepingSchema,
     HousekeepingUpdateSchema,
 )
+from app.utils.filter_utils import get_paginated_data
+from fastapi import HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 
 def create_housekeeping(
@@ -76,64 +76,9 @@ def get_housekeeping(db: Session, housekeeping_id: UUID) -> Dict[str, Any]:
 def get_housekeeping_list(
     db: Session,
     request: Any,
-    facility_id: Optional[UUID] = None,
-    inspector_id: Optional[UUID] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Get list of housekeeping checklists with optional filters."""
-    from app.api.auth.models import User
-    from app.api.facilities.models import Facility
 
-    query = db.query(Housekeeping)
-
-    # Apply filters
-    if facility_id:
-        query = query.filter(Housekeeping.facility_id == facility_id)
-
-    if inspector_id:
-        query = query.filter(Housekeeping.inspector_id == inspector_id)
-
-    if start_date:
-        query = query.filter(Housekeeping.inspection_date >= start_date)
-
-    if end_date:
-        query = query.filter(Housekeeping.inspection_date <= end_date)
-
-    # Order by most recent first
-    query = query.order_by(Housekeeping.inspection_date.desc())
-
-    # Pagination
-    limit = getattr(request, "limit", 50)
-    offset = getattr(request, "offset", 0)
-    
-    total = query.count()
-    housekeeping_list = query.limit(limit).offset(offset).all()
-
-    # Convert to dicts
-    items = [HousekeepingSchema.model_validate(hk).model_dump(mode="json") for hk in housekeeping_list]
-    
-    # Enrich with names
-    if items:
-        facility_ids = {item["facility_id"] for item in items if item.get("facility_id")}
-        inspector_ids = {item["inspector_id"] for item in items if item.get("inspector_id")}
-        
-        facilities = db.query(Facility).filter(Facility.id.in_(facility_ids)).all() if facility_ids else []
-        users = db.query(User).filter(User.id.in_(inspector_ids)).all() if inspector_ids else []
-        
-        facility_map = {str(f.id): f.facility_name for f in facilities}
-        user_map = {str(u.id): u.username for u in users}
-        
-        for item in items:
-            item["facility_name"] = facility_map.get(item.get("facility_id"))
-            item["inspector_user_name"] = user_map.get(item.get("inspector_id"))
-
-    return {
-        "items": items,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }
+    return get_paginated_data(db, request, Housekeeping, HousekeepingSchema, "inspection_date")
 
 
 def update_housekeeping(
