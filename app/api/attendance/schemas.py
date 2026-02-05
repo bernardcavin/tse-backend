@@ -4,7 +4,14 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.api.attendance.models import AttendanceLocation, AttendanceRecord, AttendanceStatus
+from app.api.attendance.models import (
+    AttendanceLocation,
+    AttendanceRecord,
+    AttendanceStatus,
+    LeaveRequest,
+    LeaveRequestType,
+    LeaveRequestStatus,
+)
 from app.core.schema_operations import BaseModel
 
 
@@ -107,3 +114,56 @@ class CheckOutRequest(BaseModel):
 
 class GenerateQRCodeRequest(BaseModel):
     location_id: UUID = Field(..., description="Location ID to generate QR code for")
+
+
+class AttendanceRecordUpdate(BaseModel):
+    notes: Optional[str] = Field(None, description="Additional notes")
+
+    class Config:
+        from_attributes = True
+
+
+class LeaveRequestSchema(BaseModel):
+    id: Optional[UUID] = Field(default=None, description="Unique identifier")
+    user_id: UUID = Field(..., description="Employee user ID")
+    employee_name: Optional[str] = Field(None, description="Employee name")
+    
+    leave_type: LeaveRequestType = Field(..., description="Type of leave")
+    start_date: datetime = Field(..., description="Start date of leave")
+    end_date: datetime = Field(..., description="End date of leave")
+    reason: str = Field(..., description="Reason for leave")
+    attachment_file_ids: Optional[list[UUID]] = Field(None, description="List of uploaded file IDs")
+    
+    status: LeaveRequestStatus = Field(default=LeaveRequestStatus.PENDING, description="Status of request")
+    rejection_reason: Optional[str] = Field(None, description="Reason for rejection")
+    
+    manager_id: Optional[UUID] = Field(None, description="Manager who approved/rejected")
+    manager_name: Optional[str] = Field(None, description="Manager name")
+    approved_at: Optional[datetime] = Field(None, description="Approval timestamp")
+    
+    created_at: Optional[datetime] = Field(None, description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(None, description="Update timestamp")
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.strftime('%Y-%m-%d %H:%M:%S') if v else None
+        }
+
+    class Meta:
+        orm_model = LeaveRequest
+
+
+class LeaveRequestCreate(BaseModel):
+    leave_type: LeaveRequestType = Field(..., description="Type of leave")
+    start_date: datetime = Field(..., description="Start date of leave")
+    end_date: datetime = Field(..., description="End date of leave")
+    reason: str = Field(..., description="Reason for leave")
+    attachment_file_ids: Optional[list[UUID]] = Field(None, description="List of uploaded file IDs")
+
+
+class LeaveRequestUpdate(BaseModel):
+    status: LeaveRequestStatus = Field(..., description="New status")
+    rejection_reason: Optional[str] = Field(None, description="Reason for rejection if rejected")
+
+

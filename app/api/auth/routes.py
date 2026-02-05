@@ -148,6 +148,32 @@ async def get_employees(
 
 
 @router.get(
+    "/users/options",
+    summary="Get User Options for Select (All Authenticated Users)",
+    tags=["User"],
+)
+async def get_user_options(
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    """
+    Get a lightweight list of users for dropdowns (id, name only).
+    Available to all authenticated users.
+    """
+    users = db.query(models.User.id, models.User.name).all()
+    
+    data = [{"value": str(u.id), "label": u.name} for u in users]
+
+    return create_api_response(
+        success=True,
+        message="User options retrieved successfully",
+        data=data,
+    )
+
+
+
+@router.get(
     "/employees/{employee_id}",
     summary="Get Employee by ID (Manager, HR, Finance)",
     tags=["Employee Management"],
@@ -217,6 +243,7 @@ async def create_employee(
         address=employee_data.address,
         emergency_contact_name=employee_data.emergency_contact_name,
         emergency_contact_phone=employee_data.emergency_contact_phone,
+        attachment_file_ids=employee_data.attachment_file_ids,
     )
 
     log_contribution(db, user, "CREATED", "employee", new_employee.name)
@@ -269,6 +296,7 @@ async def update_employee(
         address=employee_data.address,
         emergency_contact_name=employee_data.emergency_contact_name,
         emergency_contact_phone=employee_data.emergency_contact_phone,
+        attachment_file_ids=employee_data.attachment_file_ids,
     )
 
     log_contribution(db, user, "UPDATED", "employee", updated_employee.name)

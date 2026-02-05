@@ -15,7 +15,7 @@ from sqlalchemy import (
     Time,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -102,3 +102,60 @@ class AttendanceRecord(Base):
     # Relationships
     user = relationship("User", foreign_keys=[user_id])
     location = relationship("AttendanceLocation", back_populates="attendance_records")
+
+
+class LeaveRequestType(str, enum.Enum):
+    SICK = "sick"
+    PAID = "paid"
+    UNPAID = "unpaid"
+    MATERNITY = "maternity"
+    PATERNITY = "paternity"
+    OTHER = "other"
+
+
+class LeaveRequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+
+
+class LeaveRequest(Base):
+    __tablename__ = "leave_requests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    # 🔹 User Info
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    # 🔹 Leave Details
+    leave_type = Column(Enum(LeaveRequestType), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    reason = Column(Text, nullable=False)
+
+    # 🔹 Status
+    status = Column(
+        Enum(LeaveRequestStatus),
+        nullable=False,
+        default=LeaveRequestStatus.PENDING,
+    )
+    rejection_reason = Column(Text, nullable=True)
+
+    # 🔹 Approval Metadata
+    manager_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+
+    # 🔹 Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Attachment
+    attachment_file_ids = Column(ARRAY(UUID), nullable=True)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    manager = relationship("User", foreign_keys=[manager_id])
+

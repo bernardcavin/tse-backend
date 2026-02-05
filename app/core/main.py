@@ -22,6 +22,8 @@ from app.api.housekeeping import routes as housekeeping_routes
 from app.api.inventory import routes as inventory_routes
 from app.api.it_tickets import routes as it_tickets_routes
 from app.api.requests import routes as requests_routes
+from app.api.tasks import routes as tasks_routes
+
 from app.core.config import settings
 from app.core.error_handlers import (
     custom_exception_handler,
@@ -112,6 +114,8 @@ app.include_router(contacts_routes.router)
 app.include_router(it_tickets_routes.router)
 app.include_router(expeditions_routes.router)
 app.include_router(requests_routes.router)
+app.include_router(tasks_routes.router)
+
 
 
 if __name__ == "__main__":

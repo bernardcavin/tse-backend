@@ -9,12 +9,22 @@ from fastapi import HTTPException
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.api.attendance.models import AttendanceLocation, AttendanceRecord, AttendanceStatus
 from app.api.attendance.schemas import (
     AttendanceLocationSchema,
     AttendanceRecordSchema,
     CheckInRequest,
     CheckOutRequest,
+    AttendanceRecordUpdate,
+    LeaveRequestSchema,
+    LeaveRequestCreate,
+    LeaveRequestUpdate,
+)
+from app.api.attendance.models import (
+    AttendanceLocation,
+    AttendanceRecord,
+    AttendanceStatus,
+    LeaveRequest,
+    LeaveRequestStatus,
 )
 from app.core.schema_operations import parse_schema
 from app.utils.filter_utils import get_paginated_data
@@ -306,6 +316,25 @@ def get_attendance_records(
     return result
 
 
+def update_attendance_record(
+    db: Session, record_id: UUID, update_data: AttendanceRecordUpdate
+) -> AttendanceRecordSchema:
+    """Update an attendance record"""
+    record = db.query(AttendanceRecord).filter(AttendanceRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+
+    if update_data.notes is not None:
+        record.notes = update_data.notes
+        # If user clears notes (empty string), set to None if preferred, or keep as empty string.
+        # Assuming empty string is valid note clearing or just a note.
+
+    db.commit()
+    db.refresh(record)
+    return AttendanceRecordSchema.model_validate(record).model_dump(mode='json')
+
+
+
 def get_attendance_record(db: Session, record_id: UUID) -> AttendanceRecordSchema:
     """Get a single attendance record"""
     record = db.query(AttendanceRecord).filter(AttendanceRecord.id == record_id).first()
@@ -314,8 +343,9 @@ def get_attendance_record(db: Session, record_id: UUID) -> AttendanceRecordSchem
     return AttendanceRecordSchema.model_validate(record).model_dump(mode='json')
 
 
+
 def get_active_check_in(db: Session, user_id: UUID) -> Optional[AttendanceRecordSchema]:
-    """Get the user's active check-in if any"""
+    """Get the current active check-in for a user if any"""
     record = (
         db.query(AttendanceRecord)
         .filter(
@@ -329,3 +359,92 @@ def get_active_check_in(db: Session, user_id: UUID) -> Optional[AttendanceRecord
     if record:
         return AttendanceRecordSchema.model_validate(record).model_dump(mode='json')
     return None
+
+
+
+# ============================================================================
+# LEAVE REQUESTS
+# ============================================================================
+
+
+def create_leave_request(
+    db: Session, request: LeaveRequestCreate, user_id: UUID
+) -> LeaveRequestSchema:
+    """Create a new leave request"""
+    # Create request
+    db_request = LeaveRequest(
+        user_id=user_id,
+        **request.model_dump()
+    )
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    
+    return LeaveRequestSchema.model_validate(db_request).model_dump(mode='json')
+
+
+def get_leave_requests(
+    db: Session,
+    request,
+    user_id: Optional[UUID] = None,
+    manager_view: bool = False,
+) -> dict:
+    """Get leave requests with pagination"""
+    query = db.query(LeaveRequest)
+
+    if not manager_view and user_id:
+        # If not manager view, only show own requests
+        query = query.filter(LeaveRequest.user_id == user_id)
+    
+    # Order by created_at desc
+    query = query.order_by(LeaveRequest.created_at.desc())
+
+    # Get paginated data
+    result = get_paginated_data(db, request, LeaveRequest, LeaveRequestSchema, "created_at", base_query=query)
+    
+    # Populate extra fields
+    for record in result["data"]:
+        from app.api.auth.models import User
+        
+        # Employee Name
+        user = db.query(User).filter(User.id == record["user_id"]).first()
+        record["employee_name"] = user.name if user else "Unknown"
+        
+        # Manager Name (if approved/rejected)
+        if record.get("manager_id"):
+            manager = db.query(User).filter(User.id == record["manager_id"]).first()
+            record["manager_name"] = manager.name if manager else None
+            
+    return result
+
+
+def get_leave_request(db: Session, request_id: UUID) -> LeaveRequestSchema:
+    """Get a single leave request"""
+    req = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+    return LeaveRequestSchema.model_validate(req).model_dump(mode='json')
+
+
+def update_leave_request_status(
+    db: Session, request_id: UUID, update_data: LeaveRequestUpdate, manager_id: UUID
+) -> LeaveRequestSchema:
+    """Approve or reject a leave request"""
+    req = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+        
+    if req.status != LeaveRequestStatus.PENDING:
+        raise HTTPException(status_code=400, detail=f"Request is already {req.status}")
+
+    req.status = update_data.status
+    if update_data.rejection_reason:
+        req.rejection_reason = update_data.rejection_reason
+        
+    req.manager_id = manager_id
+    req.approved_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(req)
+    
+    return LeaveRequestSchema.model_validate(req).model_dump(mode='json')

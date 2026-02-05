@@ -217,6 +217,33 @@ async def get_record(
     )
 
 
+@router.put(
+    "/records/{id}",
+    summary="Update Attendance Record",
+    tags=["Attendance"],
+)
+async def update_record(
+    id: UUID,
+    update_data: schemas.AttendanceRecordUpdate,
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    # Only managers/HR can update records (assuming Manager role covers this based on earlier patterns)
+    if user.role != UserRole.MANAGER:
+        # You might want to allow HR as well if there is an HR role, but for now matching Manager only pattern
+        raise HTTPException(status_code=403, detail="Only managers can update attendance records")
+
+    updated_record = crud.update_attendance_record(db, id, update_data)
+    log_contribution(
+        db, user, "UPDATED", "attendance_record", f"id={id} notes updated"
+    )
+    return create_api_response(
+        success=True, message="Record updated successfully", data=updated_record
+    )
+
+
+
 @router.get(
     "/status",
     summary="Get Current Attendance Status",
@@ -233,4 +260,83 @@ async def get_status(
         success=True,
         message="Status retrieved successfully",
         data={"active_check_in": active_record, "is_checked_in": active_record is not None},
+    )
+
+
+# ============================================================================
+# LEAVE REQUESTS
+# ============================================================================
+
+
+@router.post(
+    "/leaves",
+    summary="Create Leave Request",
+    tags=["Attendance"],
+)
+async def create_leave_request(
+    request_data: schemas.LeaveRequestCreate,
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    leave_request = crud.create_leave_request(db, request_data, user.id)
+    log_contribution(
+        db, user, "CREATED", "leave_request", f"Type: {request_data.leave_type}"
+    )
+    return create_api_response(
+        success=True, message="Leave request submitted successfully", data=leave_request
+    )
+
+
+@router.get(
+    "/leaves",
+    summary="Get Leave Requests",
+    tags=["Attendance"],
+)
+async def get_leave_requests(
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    # Manager can see all (or filter). For now, if MANAGER, show all?
+    # Actually, we might want to filter by user_id even for managers if they want to see specific employee.
+    # But usually manager view means seeing their subordinates.
+    # For now, simplistic permissions: Manager sees all, Employee sees own.
+    
+    manager_view = can_view_all_employees(user)
+    
+    # We could add query param for user_id to filter for managers
+    # But let's keep it simple for now as per plan
+    
+    leaves = crud.get_leave_requests(db, request, user.id, manager_view=manager_view)
+    return create_api_response(
+        success=True, message="Leave requests retrieved successfully", data=leaves
+    )
+
+
+@router.put(
+    "/leaves/{id}/status",
+    summary="Update Leave Request Status",
+    tags=["Attendance"],
+)
+async def update_leave_status(
+    id: UUID,
+    update_data: schemas.LeaveRequestUpdate,
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+    user=Depends(get_current_user),
+):
+    # Only managers can approve/reject
+    if user.role != UserRole.MANAGER:
+        raise HTTPException(status_code=403, detail="Only managers can approve/reject leave requests")
+
+    updated_request = crud.update_leave_request_status(db, id, update_data, user.id)
+    log_contribution(
+        db, user, "UPDATED", "leave_request", f"id={id} status={update_data.status}"
+    )
+    
+    # TODO: Send notification to employee
+    
+    return create_api_response(
+        success=True, message="Leave request status updated", data=updated_request
     )

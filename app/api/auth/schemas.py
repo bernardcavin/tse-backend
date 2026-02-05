@@ -20,6 +20,7 @@ class UserSchema(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
     role: str
+    attachment_file_ids: Optional[list[UUID]] = None
 
 
 # Define a Pydantic model for the JSON payload
@@ -49,6 +50,7 @@ class CreateEmployeeSchema(BaseModel):
     emergency_contact_phone: Optional[str] = None
     password: str
     role: str = "EMPLOYEE"  # Default to EMPLOYEE
+    attachment_file_ids: list[UUID] = []
 
 
 class UpdateEmployeeSchema(BaseModel):
@@ -66,6 +68,7 @@ class UpdateEmployeeSchema(BaseModel):
     emergency_contact_phone: Optional[str] = None
     password: Optional[str] = None
     role: Optional[str] = None
+    attachment_file_ids: Optional[list[UUID]] = None
 
 
 # Profile Update Schema (personal data only, no employment info)

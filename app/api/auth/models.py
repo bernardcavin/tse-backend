@@ -2,6 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import (
+    ARRAY,
     JSON,
     Column,
     DateTime,
@@ -57,6 +58,9 @@ class User(Base):
     emergency_contact_phone: Mapped[str] = mapped_column(String(20), nullable=True)
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole), default=UserRole.EMPLOYEE, nullable=False
+    )
+    attachment_file_ids: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID), nullable=True
     )
 
     hashed_password: Mapped[str] = mapped_column(String(128))

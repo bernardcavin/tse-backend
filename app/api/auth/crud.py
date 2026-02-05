@@ -133,6 +133,7 @@ def create_user(
     address: Optional[str] = None,
     emergency_contact_name: Optional[str] = None,
     emergency_contact_phone: Optional[str] = None,
+    attachment_file_ids: Optional[List[str]] = None,
 ) -> models.User:
     """Create a new user (employee or manager)"""
     # Check if username already exists
@@ -161,6 +162,7 @@ def create_user(
         emergency_contact_phone=emergency_contact_phone,
         hashed_password=hashed_password,
         role=role,
+        attachment_file_ids=attachment_file_ids,
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
@@ -187,6 +189,7 @@ def update_user(
     address: Optional[str] = None,
     emergency_contact_name: Optional[str] = None,
     emergency_contact_phone: Optional[str] = None,
+    attachment_file_ids: Optional[List[str]] = None,
 ) -> models.User:
     """Update user details"""
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -245,6 +248,9 @@ def update_user(
 
     if role:
         user.role = role
+
+    if attachment_file_ids is not None:
+        user.attachment_file_ids = attachment_file_ids
 
     from datetime import datetime
 
