@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date as date_type
 from typing import Optional, List
 from uuid import UUID
 
@@ -17,6 +17,10 @@ class TaskSchema(BaseModel):
     
     status: TaskStatus = Field(TaskStatus.PLANNED, description="Current status of the task")
     priority: TaskPriority = Field(TaskPriority.MEDIUM, description="Priority level")
+    
+    date: date_type = Field(..., description="Date of the task")
+    time_start: Optional[str] = Field(None, description="Start time (HH:MM)")
+    time_end: Optional[str] = Field(None, description="End time (HH:MM)")
     
     start_date: Optional[datetime] = Field(None, description="Planned start date")
     end_date: Optional[datetime] = Field(None, description="Planned end date")
