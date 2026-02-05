@@ -59,8 +59,8 @@ class Task(Base):
     
     attachment_file_ids = Column(ARRAY(UUID), nullable=True) # List of File UUIDs
     
-    created_at = Column(DateTime, server_server_default=func.now())
-    updated_at = Column(DateTime, server_server_default=func.now(), default=datetime.now, onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now())
 
     def __repr__(self):
         return f"<Task title={self.title} status={self.status}>"
