@@ -51,7 +51,7 @@ class AttendanceLocation(Base):
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=datetime.now, nullable=False
     )
 
     # Relationships
@@ -95,7 +95,7 @@ class AttendanceRecord(Base):
     # 🔹 Metadata
     created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=datetime.now, nullable=False
     )
 
     # Relationships
@@ -148,7 +148,7 @@ class LeaveRequest(Base):
     # 🔹 Metadata
     created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=datetime.now, nullable=False
     )
 
     # Attachment
