@@ -85,7 +85,7 @@ class UserLog(Base):
     status_code = Column(String, nullable=False)
     request_body = Column(JSON, nullable=True)
     response_body = Column(JSON, nullable=True)
-    timestamp = Column(DateTime(timezone=True), server_server_default=func.now())
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="actions", foreign_keys=[user_id])
 
@@ -105,7 +105,7 @@ class UserAction(Base):
     entity_name = Column(String, nullable=True)  # e.g. "Alpha-1", "Monthly Report Sept"
 
     description = Column(String, nullable=True)  # full human-readable text
-    timestamp = Column(DateTime(timezone=True), server_server_default=func.now())
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="contributions", foreign_keys=[user_id])
 
