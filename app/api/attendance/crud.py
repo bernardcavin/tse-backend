@@ -190,7 +190,7 @@ def check_in(db: Session, request: CheckInRequest, user_id: UUID) -> AttendanceR
 
     # Check max time
     if location.attendance_max_time:
-        current_time = datetime.utcnow().time()
+        current_time = datetime.now().time()
         if current_time > location.attendance_max_time:
             raise HTTPException(
                 status_code=400,
@@ -218,7 +218,7 @@ def check_in(db: Session, request: CheckInRequest, user_id: UUID) -> AttendanceR
     record = AttendanceRecord(
         user_id=user_id,
         location_id=request.location_id,
-        check_in_time=datetime.utcnow(),
+        check_in_time=datetime.now(),
         check_in_latitude=request.latitude,
         check_in_longitude=request.longitude,
         status=AttendanceStatus.CHECKED_IN,
@@ -252,7 +252,7 @@ def check_out(db: Session, request: CheckOutRequest, user_id: UUID) -> Attendanc
         raise HTTPException(status_code=400, detail="Already checked out")
 
     # Update record
-    check_out_time = datetime.utcnow()
+    check_out_time = datetime.now()
     
     # Check max time from location
     if record.location.attendance_max_time:
@@ -442,7 +442,7 @@ def update_leave_request_status(
         req.rejection_reason = update_data.rejection_reason
         
     req.manager_id = manager_id
-    req.approved_at = datetime.utcnow()
+    req.approved_at = datetime.now()
     
     db.commit()
     db.refresh(req)

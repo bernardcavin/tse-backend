@@ -2,11 +2,21 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ARRAY, Column, DateTime, Enum, Float, ForeignKey, String, Text, JSON
+from app.core.database import Base
+from sqlalchemy import (
+    ARRAY,
+    JSON,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
-
-from app.core.database import Base
 
 
 class RequestType(str, enum.Enum):
@@ -62,9 +72,9 @@ class Request(Base):
     finance_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
     # Relationships

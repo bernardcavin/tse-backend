@@ -2,11 +2,10 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, String, Text
+from app.core.database import Base
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
-
-from app.core.database import Base
 
 
 class ExpeditionStatus(str, enum.Enum):
@@ -33,7 +32,7 @@ class Expedition(Base):
     )
     
     # Timestamps
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, server_default=func.now(), nullable=False)
     ended_at = Column(DateTime, nullable=True)
     
     # Optional notes
@@ -62,7 +61,7 @@ class ExpeditionItem(Base):
     confirmed_quantity = Column(Float, nullable=True)  # Quantity confirmed when ending expedition
     
     # Timestamps
-    scanned_at = Column(DateTime, default=datetime.utcnow, nullable=False)  # When item was added
+    scanned_at = Column(DateTime, server_default=func.now(), nullable=False)  # When item was added
     confirmed_at = Column(DateTime, nullable=True)  # When item was confirmed during end process
     
     # Relationships

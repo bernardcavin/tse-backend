@@ -2,11 +2,21 @@ import enum
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import ARRAY, Column, DateTime, Enum, ForeignKey, String, Text, Date, Time
+from app.core.database import Base
+from sqlalchemy import (
+    ARRAY,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    String,
+    Text,
+    Time,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
-
-from app.core.database import Base
 
 
 class ObservationStatus(str, enum.Enum):
@@ -102,9 +112,9 @@ class SafetyObservation(Base):
     close_reason = Column(Text, nullable=True)
 
     # 🔹 Metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
     # 🔹 Relationships

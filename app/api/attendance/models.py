@@ -2,6 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
+from app.core.database import Base
 from sqlalchemy import (
     Boolean,
     Column,
@@ -17,8 +18,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import relationship
-
-from app.core.database import Base
 
 
 class AttendanceStatus(str, enum.Enum):
@@ -50,9 +49,9 @@ class AttendanceLocation(Base):
 
     # 🔹 Metadata
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
     )
 
     # Relationships
@@ -74,7 +73,7 @@ class AttendanceRecord(Base):
     )
 
     # 🔹 Check-in Details
-    check_in_time = Column(DateTime, nullable=False, default=datetime.utcnow)
+    check_in_time = Column(DateTime, nullable=False, server_default=func.now())
     check_in_latitude = Column(Float, nullable=True)
     check_in_longitude = Column(Float, nullable=True)
 
@@ -94,9 +93,9 @@ class AttendanceRecord(Base):
     notes = Column(Text, nullable=True)
 
     # 🔹 Metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
     )
 
     # Relationships
@@ -147,9 +146,9 @@ class LeaveRequest(Base):
     approved_at = Column(DateTime, nullable=True)
 
     # 🔹 Metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=func.now(), nullable=False
     )
 
     # Attachment

@@ -2,6 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
+from app.core.database import Base
 from sqlalchemy import (
     ARRAY,
     Column,
@@ -11,11 +12,10 @@ from sqlalchemy import (
     ForeignKey,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-
-from app.core.database import Base
 
 
 class TaskStatus(str, enum.Enum):
@@ -59,8 +59,8 @@ class Task(Base):
     
     attachment_file_ids = Column(ARRAY(UUID), nullable=True) # List of File UUIDs
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, server_server_default=func.now())
+    updated_at = Column(DateTime, server_server_default=func.now(), default=datetime.now, onupdate=func.now())
 
     def __repr__(self):
         return f"<Task title={self.title} status={self.status}>"
