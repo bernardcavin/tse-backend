@@ -44,12 +44,12 @@ class Task(Base):
     status = Column(Enum(TaskStatus), default=TaskStatus.PLANNED, nullable=False)
     priority = Column(Enum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False)
     
-    date = Column(Date, nullable=True)
+    # date = Column(Date, nullable=True) # Deprecated in favor of start_date/end_date
     time_start = Column(String, nullable=True)
     time_end = Column(String, nullable=True)
     
-    start_date = Column(DateTime, nullable=True) # Kept for backward compatibility or other uses
-    end_date = Column(DateTime, nullable=True)   # Kept for backward compatibility or other uses
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
     
     # Relationships
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)

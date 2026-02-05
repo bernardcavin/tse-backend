@@ -18,12 +18,11 @@ class TaskSchema(BaseModel):
     status: TaskStatus = Field(TaskStatus.PLANNED, description="Current status of the task")
     priority: TaskPriority = Field(TaskPriority.MEDIUM, description="Priority level")
     
-    date: date_type = Field(..., description="Date of the task")
+    start_date: date_type = Field(..., description="Start date")
+    end_date: date_type = Field(..., description="End date")
+    
     time_start: Optional[str] = Field(None, description="Start time (HH:MM)")
     time_end: Optional[str] = Field(None, description="End time (HH:MM)")
-    
-    start_date: Optional[datetime] = Field(None, description="Planned start date")
-    end_date: Optional[datetime] = Field(None, description="Planned end date")
     
     created_by_id: Optional[UUID] = Field(None, description="ID of the creator (auto-filled)")
     created_by: Optional[UserSchema] = Field(None, description="Creator details")
