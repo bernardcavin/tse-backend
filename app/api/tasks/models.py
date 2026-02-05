@@ -48,8 +48,8 @@ class Task(Base):
     time_start = Column(String, nullable=True)
     time_end = Column(String, nullable=True)
     
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
     
     # Relationships
     created_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
