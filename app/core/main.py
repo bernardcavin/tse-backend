@@ -69,11 +69,6 @@ app = FastAPI(
     redirect_slashes=False
 )
 
-
-app.add_middleware(CustomHeaderMiddleware)
-app.add_middleware(TimeoutMiddleware, timeout=999)
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.APP_CORS_ORIGINS,
@@ -82,6 +77,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(CustomHeaderMiddleware)
+app.add_middleware(TimeoutMiddleware, timeout=999)
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
