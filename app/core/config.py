@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     IMGPROXY_KEY: str = "736563726574"
     IMGPROXY_SALT: str = "68656C6C6F"
 
-    APP_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
+    APP_CORS_ORIGINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = ["*"]
 
     APP_NAME: str = "TSE"
 
