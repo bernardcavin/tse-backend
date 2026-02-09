@@ -25,6 +25,6 @@ log.json
 log.log
 DDL
 .mypy_cache
-
+app/core/database/alembic/versions
 errors.log
 *.db
