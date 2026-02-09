@@ -61,9 +61,9 @@ class Housekeeping(Base):
     additional_notes = Column(Text, nullable=True)
 
     # 🔹 Metadata
-    created_at = Column(DateTime, server_default=func.now(),default=datetime.now, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
     updated_at = Column(
-        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=datetime.now, nullable=False
     )
 
     # 🔹 Relationships

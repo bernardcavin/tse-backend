@@ -65,8 +65,10 @@ class User(Base):
 
     hashed_password: Mapped[str] = mapped_column(String(128))
 
-    created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.now, server_default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(DateTime)
+    created_at = Column(DateTime, server_default=func.now(), default=datetime.now, nullable=False)
+    updated_at = Column(
+        DateTime, server_default=func.now(), default=datetime.now, onupdate=datetime.now, nullable=False
+    )
 
     actions = relationship(
         "UserLog", back_populates="user", foreign_keys="UserLog.user_id"

@@ -3,3 +3,10 @@ from app.api.contacts import models as contacts_models
 from app.api.facilities import models as facilities_models
 from app.api.files import models as files_models
 from app.api.inventory import models as inventory_models
+from app.api.expeditions import models as expedition_models
+from app.api.attendance import models as attendance_models
+from app.api.housekeeping import models as housekeeping_models
+from app.api.it_tickets import models as it_tickets_models
+from app.api.requests import models as requests_models
+from app.api.safety_observations import models as safety_observations_models
+from app.api.tasks import models as tasks_models
