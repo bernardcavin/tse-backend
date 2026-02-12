@@ -10,7 +10,7 @@ object_storage_client = Minio(
     settings.S3_ENDPOINT_URL,  # MinIO address
     access_key=settings.S3_ACCESS_KEY,  # MinIO access key
     secret_key=settings.S3_SECRET_ACCESS_KEY,  # MinIO secret key
-    secure=False,  # Set to True if using https
+    secure=True,  # Set to True if using https
 )
 
 # Check if the bucket already exists
