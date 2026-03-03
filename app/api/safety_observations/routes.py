@@ -58,6 +58,7 @@ async def get_observations(
     status: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    observer_name: Optional[str] = None,
     db: Session = Depends(get_db_session),
     request=Depends(get_request),
     user=Depends(get_current_user),
@@ -74,7 +75,7 @@ async def get_observations(
         observer_id = user.id
 
     observations = crud.get_observations(
-        db, request, observer_id, facility_id, status, start_date, end_date
+        db, request, observer_id, facility_id, status, start_date, end_date, observer_name
     )
     return create_api_response(
         success=True, message="Observations retrieved successfully", data=observations

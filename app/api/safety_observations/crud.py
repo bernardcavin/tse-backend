@@ -93,12 +93,19 @@ def get_observations(
     status: Optional[ObservationStatus] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    observer_name: Optional[str] = None,
 ) -> dict:
     """Get all Safety observations with filtering and pagination"""
     from app.api.auth.models import User
     from app.api.facilities.models import Facility
     
     query = db.query(SafetyObservation)
+
+    # Filter by observer name (join with User table)
+    if observer_name:
+        query = query.join(User, SafetyObservation.observer_id == User.id).filter(
+            User.name.ilike(f"%{observer_name}%")
+        )
 
     # Apply filters
     if observer_id:  # For employees - only show their own observations
