@@ -117,6 +117,68 @@ async def update_user_profile(
     )
 
 
+@router.post("/enroll-face", summary="Enroll Face for Check-in", tags=["User"])
+async def enroll_face(
+    body: schemas.EnrollFaceRequest,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    """Store a pre-computed face embedding for the current user."""
+    if not body.face_embedding or len(body.face_embedding) < 64:
+        raise HTTPException(status_code=400, detail="Invalid face embedding")
+
+    # Re-query user in THIS session (get_current_user uses a separate session)
+    db_user = db.query(models.User).filter_by(id=user.id).first()
+    db_user.face_embedding = body.face_embedding
+    log_contribution(db, db_user, "UPDATED", "face_enrollment", db_user.name)
+    db.commit()
+
+    return create_api_response(
+        success=True,
+        message="Face enrolled successfully"
+    )
+
+
+@router.delete("/enroll-face", summary="Clear Own Face Enrollment", tags=["User"])
+async def clear_face_enrollment(
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    """Clear the face enrollment for the current user."""
+    user.face_embedding = None
+    log_contribution(db, user, "DELETED", "face_enrollment", user.name)
+    db.commit()
+    
+    return create_api_response(
+        success=True,
+        message="Face enrollment cleared successfully"
+    )
+
+@router.delete("/employees/{employee_id}/face", summary="Clear Employee Face Enrollment (Manager)", tags=["Employee Management"])
+async def clear_employee_face_enrollment(
+    employee_id: UUID,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+    request=Depends(get_request),
+):
+    from app.api.auth.crud import require_manager
+    require_manager(user)
+    
+    employee = db.query(models.User).filter(models.User.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+        
+    employee.face_embedding = None
+    log_contribution(db, user, "DELETED", "employee_face_enrollment", employee.name)
+    db.commit()
+    
+    return create_api_response(
+        success=True,
+        message="Employee face enrollment cleared successfully"
+    )
+
 # ---------------------------------------------------------------------------- #
 #                            EMPLOYEE MANAGEMENT                                #
 # ---------------------------------------------------------------------------- #

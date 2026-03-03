@@ -9,6 +9,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     String,
     func,
@@ -61,6 +62,9 @@ class User(Base):
     )
     attachment_file_ids: Mapped[list[uuid.UUID]] = mapped_column(
         ARRAY(UUID), nullable=True
+    )
+    face_embedding: Mapped[list[float]] = mapped_column(
+        ARRAY(Float), nullable=True
     )
 
     hashed_password: Mapped[str] = mapped_column(String(128))

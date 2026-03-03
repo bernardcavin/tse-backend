@@ -103,6 +103,7 @@ class CheckInRequest(BaseModel):
     qr_code_data: str = Field(..., description="Scanned QR code data")
     latitude: float = Field(..., description="User's current latitude")
     longitude: float = Field(..., description="User's current longitude")
+    face_embedding: list[float] = Field(..., description="Pre-computed face embedding from client")
 
 
 class CheckOutRequest(BaseModel):
@@ -110,6 +111,7 @@ class CheckOutRequest(BaseModel):
     latitude: Optional[float] = Field(None, description="User's current latitude")
     longitude: Optional[float] = Field(None, description="User's current longitude")
     notes: Optional[str] = Field(None, description="Additional notes")
+    face_embedding: Optional[list[float]] = Field(None, description="Pre-computed face embedding from client")
 
 
 class GenerateQRCodeRequest(BaseModel):

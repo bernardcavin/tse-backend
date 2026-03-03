@@ -112,4 +112,4 @@ app.include_router(tasks_routes.router)
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, h11_max_incomplete_event_size=0)

@@ -82,6 +82,7 @@ class SafetyObservationSchema(BaseModel):
     resolved_by_name: Optional[str] = Field(None, description="Name of the resolver")
     resolved_at: Optional[datetime] = Field(None, description="Resolution timestamp")
     resolution_notes: Optional[str] = Field(None, description="Resolution notes")
+    resolution_photo_file_ids: Optional[List[UUID]] = Field(None, description="Resolution photo file IDs")
 
     # Close Information
     closed_by_id: Optional[UUID] = Field(None, description="ID of user who closed")
@@ -194,6 +195,9 @@ class SafetyObservationUpdateSchema(BaseModel):
 class SafetyObservationResolveSchema(BaseModel):
     resolution_notes: str = Field(
         ..., description="Resolution notes from HSE employee", min_length=10
+    )
+    resolution_photo_file_ids: Optional[List[UUID]] = Field(
+        None, description="Optional photo file IDs for resolution evidence"
     )
 
 

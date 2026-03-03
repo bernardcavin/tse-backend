@@ -166,6 +166,20 @@ def check_in(db: Session, request: CheckInRequest, user_id: UUID) -> AttendanceR
     if not location.is_active:
         raise HTTPException(status_code=400, detail="Attendance location is inactive")
 
+    # Validate Face Recognition
+    from app.api.auth.models import User
+    from app.core.face_utils import is_same_person
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user.face_embedding:
+        raise HTTPException(status_code=403, detail="Face not enrolled. Please enroll your face first.")
+    
+    if not request.face_embedding or len(request.face_embedding) < 64:
+        raise HTTPException(status_code=400, detail="Invalid face embedding submitted.")
+        
+    if not is_same_person(user.face_embedding, request.face_embedding):
+        raise HTTPException(status_code=403, detail="Face verification failed. Embedding does not match enrolled face.")
+
     # Validate QR code - compare parsed JSON to handle property order differences
     try:
         stored_qr = json.loads(location.qr_code_data) if location.qr_code_data else {}
@@ -250,6 +264,18 @@ def check_out(db: Session, request: CheckOutRequest, user_id: UUID) -> Attendanc
     # Verify status
     if record.status == AttendanceStatus.CHECKED_OUT:
         raise HTTPException(status_code=400, detail="Already checked out")
+
+    # Validate Face Recognition (skip if user hasn't enrolled — migration grace period)
+    from app.api.auth.models import User
+    from app.core.face_utils import is_same_person
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if user.face_embedding:
+        # Only verify face if user has enrolled
+        if not request.face_embedding or len(request.face_embedding) < 64:
+            raise HTTPException(status_code=400, detail="Invalid face embedding submitted.")
+        if not is_same_person(user.face_embedding, request.face_embedding):
+            raise HTTPException(status_code=403, detail="Face verification failed. Embedding does not match enrolled face.")
 
     # Update record
     check_out_time = datetime.now()

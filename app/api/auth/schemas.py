@@ -2,7 +2,12 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
+from pydantic import model_validator
 from app.core.schema_operations import BaseModel
+
+
+class EnrollFaceRequest(BaseModel):
+    face_embedding: list[float]  # pre-computed embedding from client-side TFLite
 
 
 class UserSchema(BaseModel):
@@ -21,6 +26,24 @@ class UserSchema(BaseModel):
     emergency_contact_phone: Optional[str] = None
     role: str
     attachment_file_ids: Optional[list[UUID]] = None
+    face_embedding: Optional[list[float]] = None
+    has_face_embedding: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_has_face_embedding(cls, data):
+        if isinstance(data, dict):
+            # Incoming data might be a dict (e.g., from an API payload)
+            # Actually we usually create schemas from SQLAlchemy models via model_validate()
+            # In that case, mode='before' gets the SQLAlchemy object. Let's use mode='after' instead or check getattr.
+            if "face_embedding" in data:
+                data["has_face_embedding"] = data["face_embedding"] is not None
+            elif hasattr(data, "face_embedding"):
+                data["has_face_embedding"] = getattr(data, "face_embedding") is not None
+        else:
+            # It's an ORM instance
+            data.has_face_embedding = getattr(data, "face_embedding", None) is not None
+        return data
 
 
 # Define a Pydantic model for the JSON payload

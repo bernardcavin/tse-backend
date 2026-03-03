@@ -105,6 +105,7 @@ class SafetyObservation(Base):
     resolved_by_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     resolution_notes = Column(Text, nullable=True)
+    resolution_photo_file_ids = Column(ARRAY(PG_UUID), nullable=True)
 
     # 🔹 Close Information (HSE/Manager can close invalid observations)
     closed_by_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

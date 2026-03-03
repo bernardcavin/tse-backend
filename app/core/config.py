@@ -37,10 +37,12 @@ class Settings(BaseSettings):
     S3_ACCESS_KEY: str = "12345678"
     S3_SECRET_ACCESS_KEY: str = "password"
     S3_BUCKET_NAME: str = "tse"
+    S3_SECURE: bool = False
 
     IMAGE_PROXY_URL: str = "http://172.17.0.1:8080"
     IMGPROXY_KEY: str = "736563726574"
     IMGPROXY_SALT: str = "68656C6C6F"
+
 
     APP_CORS_ORIGINS: Annotated[list[str] | str, BeforeValidator(parse_cors)] = ["*"]
 

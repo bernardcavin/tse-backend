@@ -211,6 +211,8 @@ def resolve_observation(
     db_observation.resolved_by_id = resolved_by_id
     db_observation.resolved_at = datetime.utcnow()
     db_observation.resolution_notes = resolution.resolution_notes
+    if resolution.resolution_photo_file_ids:
+        db_observation.resolution_photo_file_ids = resolution.resolution_photo_file_ids
 
     db.commit()
     db.refresh(db_observation)
