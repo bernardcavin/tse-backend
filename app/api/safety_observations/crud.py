@@ -93,6 +93,7 @@ def get_observations(
     status: Optional[ObservationStatus] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    date: Optional[date] = None,
     observer_name: Optional[str] = None,
 ) -> dict:
     """Get all Safety observations with filtering and pagination"""
@@ -118,6 +119,8 @@ def get_observations(
         query = query.filter(SafetyObservation.observation_date >= start_date)
     if end_date:
         query = query.filter(SafetyObservation.observation_date <= end_date)
+    if date:
+        query = query.filter(SafetyObservation.observation_date == date)
 
     # Use standard pagination utility with filtered query
     result = get_paginated_data(
